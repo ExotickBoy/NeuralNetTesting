@@ -3,6 +3,7 @@ package core;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Random;
 
 public class Train {
@@ -20,8 +21,15 @@ public class Train {
 	
 	private static final int HIDDEN_LAYER_SIZE = 1000;
 	
-	private static final double LEARNING_RATE = .000005;;
+	private static final double LEARNING_RATE = .000005;
 	private static final double SAMPLE_PROPORTION = 0.01;
+	
+	private static final double LOWER_COST_LIMIT = 0.01;
+	
+	private static final int STANDARD_ITERATION_LIMIT = 200;
+	
+	private static final int SGD_MINIBATCH_SIZE = 100;
+	private static final int SGD_ITERATION_LIMIT = (int)(STANDARD_ITERATION_LIMIT * TRAIN_SAMPLES * SAMPLE_PROPORTION / SGD_MINIBATCH_SIZE);
 	
 	private static long time = 0;
 	
@@ -34,6 +42,34 @@ public class Train {
 		
 		int trainSamples = (int) (TRAIN_SAMPLES * SAMPLE_PROPORTION);
 		int testSamples = (int) (TEST_SAMPLES * SAMPLE_PROPORTION);
+		
+		boolean isStochastic = false;
+		
+		
+		
+		if (args.length == 1) {
+			
+			boolean isRecognisedArg = true;
+			
+			switch (args[0]) {
+			
+			case "-s":
+				
+				isStochastic = true;
+				
+				break;
+				
+			default:
+				
+				isRecognisedArg = false;
+				
+				break;
+				
+			}
+			
+			assert isRecognisedArg;
+			
+		}
 		
 		try {
 			
@@ -52,19 +88,76 @@ public class Train {
 		
 		long start = System.currentTimeMillis();
 		
-		for (int i = 0;; i++) {
+		double cost = Double.NaN;
+		
+		if (!isStochastic) { // Standard gradient descent
 			
-			Matrix yHat = network.forward(x);
+			for (int i = 0; i < STANDARD_ITERATION_LIMIT && cost > LOWER_COST_LIMIT; i++) {
+				
+				Matrix yHat = network.forward(x);
+				
+				network.findCostPrime(x, y, yHat);
+				
+				cost = network.getCost(x, y, yHat);
+				double testingCost = network.getCost(xTesting, yTesting, network.forward(xTesting));
+				
+				String gap = ",";
+				System.out.println(i + gap + cost + gap + testingCost + gap + ((System.currentTimeMillis() - start) / 1000d));
+				
+				network.descend(LEARNING_RATE);
+			}
 			
-			network.findCostPrime(x, y, yHat);
+		} else { // Stochastic gradient descent
 			
-			double cost = network.getCost(x, y, yHat);
-			double testingCost = network.getCost(xTesting, yTesting, network.forward(xTesting));
+			ArrayList<Matrix> miniBatchesX = new ArrayList<Matrix>();
+			ArrayList<Matrix> miniBatchesY = new ArrayList<Matrix>();
 			
-			String gap = ",";
-			System.out.println(i + gap + cost + gap + testingCost + gap + ((System.currentTimeMillis() - start) / 1000d));
+			int numMinibatches = (int)(SAMPLE_PROPORTION * TRAIN_SAMPLES / SGD_MINIBATCH_SIZE);
 			
-			network.descend(LEARNING_RATE);
+			// Split x and y into minibatches
+			for (int i = 0; i < numMinibatches; i++) {
+				
+				Matrix batchX = new Matrix(SGD_MINIBATCH_SIZE, SAMPLE_HEIGHT * SAMPLE_WIDTH);
+				Matrix batchY = new Matrix(SGD_MINIBATCH_SIZE, 10);
+				
+				for (int row = 0; row < batchX.getRows(); row++) {
+					for (int col = 0; col < batchX.getColumns(); col++) {
+						batchX.set(row, col, x.get(row + i * SGD_MINIBATCH_SIZE, col));
+					}
+				}
+				
+				for (int row = 0; row < batchY.getRows(); row++) {
+					for (int col = 0; col < batchY.getColumns(); col++) {
+						batchY.set(row, col, y.get(row + i * SGD_MINIBATCH_SIZE, col));
+					}
+				}
+				
+				miniBatchesX.add(batchX);
+				miniBatchesY.add(batchY);
+				
+			}
+			
+			// Each iteration, chose a minibatch at random and descend
+			for (int i = 0; i < SGD_ITERATION_LIMIT && cost > LOWER_COST_LIMIT; i++) {
+				
+				int index = r.nextInt(numMinibatches);
+				
+				Matrix batchX = miniBatchesX.get(index);
+				Matrix batchY = miniBatchesY.get(index);
+				
+				Matrix yHat = network.forward(batchX);
+				
+				cost = network.getCost(batchX, batchY, yHat);
+				
+				double testingCost = network.getCost(xTesting, yTesting, network.forward(xTesting));
+				
+				String gap = ",";
+				System.out.println(i + gap + cost + gap + testingCost + gap + ((System.currentTimeMillis() - start) / 1000d));
+				
+				network.descend(LEARNING_RATE);
+
+			}
+			
 		}
 		
 	}
