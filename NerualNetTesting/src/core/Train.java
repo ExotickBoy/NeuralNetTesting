@@ -20,9 +20,10 @@ public class Train {
 	private static final int TEST_SAMPLES = 10000;
 
 	private static final int HIDDEN_LAYER_SIZE = 1000;
-
-	private static final double LEARNING_RATE = .000005;
-	private static final double SAMPLE_PROPORTION = 0.01;
+	private static final int HIDDEN_LAYER_AMOUNT = 3;
+	
+	private static final double LEARNING_RATE = 1;
+	private static final double SAMPLE_PROPORTION = 0.002;
 
 	private static final double LOWER_COST_LIMIT = 0.01;
 
@@ -84,8 +85,9 @@ public class Train {
 		}
 
 		Random r = new Random(0);
-		NN network = new NN(x.getColumns(), y.getColumns(), HIDDEN_LAYER_SIZE, r);
 
+		NN network = new NN(x.getColumns(), y.getColumns(), HIDDEN_LAYER_SIZE, HIDDEN_LAYER_AMOUNT, r);
+		
 		long start = System.currentTimeMillis();
 
 		double cost = Double.MAX_VALUE;
