@@ -67,6 +67,12 @@ public class Matrix {
 		
 	}
 	
+	public double get(int row, int column) {
+		
+		return data[row][column];
+		
+	}
+	
 	public static Matrix map(Matrix input, Function<Double, Double> function) {
 		
 		Matrix result = new Matrix(input.rows, input.columns);
