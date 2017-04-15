@@ -119,28 +119,7 @@ public class NN {
 			}
 			
 		}
-		
-		// Matrix delta(n) = multiply(sub(yHat, y), map(z(n), NN::activationPrime));
-		// Matrix dJdW(n) = add(dot(transpose(a(n - 1)), delta(n)), multiply(lambda, w(n)));
-		
-		// Matrix delta(n) = multiply(dot(delta(n + 1), transpose(w(n + 1))), map(z(n),NN::activationPrime));
-		// dJdW(n) = add(dot(transpose(a(n - 1)), delta(n)), multiply(lambda, w(n)));
-		
-		// Matrix delta(n) = multiply(dot(delta(n + 1), transpose(w(n + 1))), map(z(n),NN::activationPrime));
-		// dJdW(n) = add(dot(transpose(x), delta(n)), multiply(lambda, w(n)));
-		
-		// Matrix delta3 = multiply(sub(yHat, y), map(z3, NN::activationPrime));
-		// Matrix dJdW3 = add(dot(transpose(a2), delta3), multiply(lambda, w3));
-		
-		// Matrix delta2 = multiply(dot(delta3, transpose(w3)), map(z2,NN::activationPrime));
-		// dJdW2 = add(dot(transpose(a1), delta2), multiply(lambda, w2));
-		
-		// Matrix delta1 = multiply(dot(delta2, transpose(w2)), map(z1,NN::activationPrime));
-		// dJdW1 = add(dot(transpose(a0), delta1), multiply(lambda, w1));
-		
-		// Matrix delta0 = multiply(dot(delta1, transpose(w1)), map(z0,NN::activationPrime));
-		// dJdW0 = add(dot(transpose(x), delta0), multiply(lambda, w0));
-		
+				
 	}
 	
 	public void descend(double learningRate) {
