@@ -22,6 +22,8 @@ public class Train {
 	
 	private static final int HIDDEN_LAYER_SIZE = 1000;
 	
+	private static final double SAMPLE_PROPORTION = 0.01;
+	
 	private static long time = 0;
 	
 	public static void main(String[] args) {
@@ -31,9 +33,9 @@ public class Train {
 		Matrix xTesting = null;
 		Matrix yTesting = null;
 		
-		double d = 0.05;
-		int trainSamples = (int) (TRAIN_SAMPLES * d);
-		int testSamples = (int) (TEST_SAMPLES * d);
+		
+		int trainSamples = (int) (TRAIN_SAMPLES * SAMPLE_PROPORTION);
+		int testSamples = (int) (TEST_SAMPLES * SAMPLE_PROPORTION);
 		
 		try {
 			
