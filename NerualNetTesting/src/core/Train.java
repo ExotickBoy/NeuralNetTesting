@@ -22,6 +22,8 @@ public class Train {
 	
 	private static final int HIDDEN_LAYER_SIZE = 1000;
 	
+	private static final double LEARNING_RATE = .000005;;
+	
 	private static long time = 0;
 	
 	public static void main(String[] args) {
@@ -64,8 +66,7 @@ public class Train {
 			String gap = ",";
 			System.out.println(i + gap + cost + gap + testingCost + gap + ((System.currentTimeMillis() - start) / 1000d));
 			
-			double learningRate = .000005;
-			network.descend(learningRate);
+			network.descend(LEARNING_RATE);
 		}
 		
 	}
