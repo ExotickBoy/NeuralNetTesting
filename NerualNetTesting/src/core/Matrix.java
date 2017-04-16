@@ -1,13 +1,16 @@
 package core;
 
+import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
-public class Matrix {
+public class Matrix implements Serializable {
 	
+	private static final long serialVersionUID = 1L;
+
 	private static final NumberFormat FORMATTER = new DecimalFormat("#0.00");
 	
 	private int rows;
