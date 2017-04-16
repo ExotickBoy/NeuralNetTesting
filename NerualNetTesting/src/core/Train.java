@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.util.Random;
+import java.util.zip.GZIPOutputStream;
 
 import trainers.BatchTraining;
 import trainers.SimpleGradientDescent;
@@ -90,7 +91,7 @@ public class Train {
 			
 			System.out.println(iteration + "," + trainingCost + "," + testingCost + "," + timeElapsed);
 			try {
-				ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File("network" + iteration + ".nwk")));
+				ObjectOutputStream oos = new ObjectOutputStream(new GZIPOutputStream(new FileOutputStream(new File("network" + iteration + ".nwk"))));
 				oos.writeObject(network);
 				oos.close();
 			} catch (IOException e) {
@@ -102,7 +103,7 @@ public class Train {
 		trainer.train();
 		
 		try {
-			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File("network.nwk")));
+			ObjectOutputStream oos = new ObjectOutputStream(new GZIPOutputStream(new FileOutputStream(new File("network.nwk"))));
 			oos.writeObject(network);
 			oos.close();
 		} catch (IOException e) {

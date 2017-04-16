@@ -27,9 +27,9 @@ public class NeuralNetwork implements Serializable {
 	// private int numberOfHiddenLayers;
 	
 	private ArrayList<Matrix> w = new ArrayList<>(); // -1
-	private ArrayList<Matrix> djdw = new ArrayList<>(); // -1
-	private ArrayList<Matrix> a = new ArrayList<>(); // -2
-	private ArrayList<Matrix> z = new ArrayList<>(); // -2
+	private transient ArrayList<Matrix> djdw = new ArrayList<>(); // -1
+	private transient ArrayList<Matrix> a = new ArrayList<>(); // -2
+	private transient ArrayList<Matrix> z = new ArrayList<>(); // -2
 	
 	public NeuralNetwork(int inputLayerSize, int outputLayerSize, int hiddenLayerSize, int numberOfHiddenLayers, Random r) {
 		
