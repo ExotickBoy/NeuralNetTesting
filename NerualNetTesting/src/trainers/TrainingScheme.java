@@ -10,11 +10,11 @@ public abstract class TrainingScheme {
 	private boolean defaultLimit = true;
 	
 	private boolean useMaxIterations = false;
-	private boolean useMaxTime = true;
+	private boolean useMaxTime = false;
 	private boolean useMinCost = false;
 	private int maxIterations = 0;
-	private int maxTime = 10 * 60;
-	private int minCost = 0;
+	private double maxTime = 0;
+	private double minCost = .1;
 	
 	private Matrix allXTraining;
 	private Matrix allYTraining;
@@ -40,9 +40,7 @@ public abstract class TrainingScheme {
 	}
 	
 	public final void train() {
-		
-		System.out.println("Starting training");
-		
+				
 		long startTime = System.currentTimeMillis();
 		double timeElapsed = 0;
 		
@@ -53,6 +51,7 @@ public abstract class TrainingScheme {
 		if (callback != null) {
 			callback.iterated(network, 0, trainingCost, testingCost, timeElapsed);
 		}
+		
 		
 		for (int iteration = 0; (!useMaxIterations || iteration < maxIterations) && (!useMinCost || trainingCost < minCost) && (!useMaxTime || timeElapsed < maxTime); iteration++) {
 			
@@ -143,7 +142,7 @@ public abstract class TrainingScheme {
 	public void setMaxIterations(int maxIterations) {
 		
 		if (defaultLimit) {
-			useMaxTime = false;
+			useMinCost = false;
 			defaultLimit = false;
 		}
 		
@@ -152,9 +151,10 @@ public abstract class TrainingScheme {
 		
 	}
 	
-	public void setMaxTime(int maxTime) {
+	public void setMaxTime(double maxTime) {
 		
 		if (defaultLimit) {
+			useMinCost = false;
 			defaultLimit = false;
 		}
 		
@@ -163,10 +163,10 @@ public abstract class TrainingScheme {
 		
 	}
 	
-	public void setMinCost(int minCost) {
+	public void setMinCost(double minCost) {
 		
 		if (defaultLimit) {
-			useMaxTime = false;
+			useMinCost = false;
 			defaultLimit = false;
 		}
 		
@@ -177,7 +177,7 @@ public abstract class TrainingScheme {
 	
 	public interface CallBack {
 		
-		public void iterated(NeuralNetwork network, double iteration, double trainingCost, double testingCost, double timeElapsed);
+		public void iterated(NeuralNetwork network, int iteration, double trainingCost, double testingCost, double timeElapsed);
 		
 	}
 	

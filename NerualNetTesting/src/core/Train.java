@@ -31,7 +31,7 @@ public class Train {
 	private static final int HIDDEN_LAYER_AMOUNT = 3;
 	
 	private static final double LEARNING_RATE = 1;
-	private static final double SAMPLE_PROPORTION = 1;
+	private static final double SAMPLE_PROPORTION = .1;
 	
 	public static void main(String[] args) {
 		

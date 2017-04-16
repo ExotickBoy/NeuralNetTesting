@@ -75,7 +75,7 @@ public class StochasticTraining extends TrainingScheme {
 	@Override
 	protected Matrix getXTesting() {
 		
-		return getAllYTesting();
+		return getAllXTesting();
 		
 	}
 	
