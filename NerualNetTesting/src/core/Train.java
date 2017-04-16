@@ -85,7 +85,7 @@ public class Train {
 		
 		Random r = new Random(0);
 		
-		NN network = new NN(x.getColumns(), y.getColumns(), HIDDEN_LAYER_SIZE, HIDDEN_LAYER_AMOUNT, r);
+		NeuralNetwork network = new NeuralNetwork(x.getColumns(), y.getColumns(), HIDDEN_LAYER_SIZE, HIDDEN_LAYER_AMOUNT, r);
 		
 		long start = System.currentTimeMillis();
 		
