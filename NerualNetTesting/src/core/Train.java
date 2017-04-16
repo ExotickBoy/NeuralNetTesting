@@ -23,7 +23,7 @@ public class Train {
 	private static final int HIDDEN_LAYER_SIZE = 1000;
 	private static final int HIDDEN_LAYER_AMOUNT = 3;
 	
-	private static final double LEARNING_RATE = 1;
+	private static final double LEARNING_RATE = 100;
 	private static final double SAMPLE_PROPORTION = 0.002;
 	
 	private static final double LOWER_COST_LIMIT = 0.01;

@@ -11,13 +11,15 @@ import static core.Matrix.transpose;
 import static java.lang.Math.E;
 import static java.lang.Math.pow;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class NN {
+public class NeuralNetwork implements Serializable {
 	
+	private static final long serialVersionUID = 1L;
+
 	private static double lambda = 0.0001; // overfitting penalty
 	
 	private int inputLayerSize;
@@ -30,7 +32,7 @@ public class NN {
 	private ArrayList<Matrix> a = new ArrayList<>(); // -2
 	private ArrayList<Matrix> z = new ArrayList<>(); // -2
 	
-	public NN(int inputLayerSize, int outputLayerSize, int hiddenLayerSize, int numberOfHiddenLayers, Random r) {
+	public NeuralNetwork(int inputLayerSize, int outputLayerSize, int hiddenLayerSize, int numberOfHiddenLayers, Random r) {
 		
 		assert numberOfHiddenLayers >= 1;
 		
@@ -39,11 +41,11 @@ public class NN {
 		this.hiddenLayerSize = hiddenLayerSize;
 		this.numberOfHiddenLayers = numberOfHiddenLayers;
 		
-		w.add(new Matrix(inputLayerSize, hiddenLayerSize, r::nextDouble));
+		w.add(new Matrix(inputLayerSize, hiddenLayerSize, r::nextGaussian));
 		for (int i = 0; i < numberOfHiddenLayers - 1; i++) {
-			w.add(new Matrix(hiddenLayerSize, hiddenLayerSize, r::nextDouble));
+			w.add(new Matrix(hiddenLayerSize, hiddenLayerSize, r::nextGaussian));
 		}
-		w.add(new Matrix(hiddenLayerSize, outputLayerSize, r::nextDouble));
+		w.add(new Matrix(hiddenLayerSize, outputLayerSize, r::nextGaussian));
 		
 		djdw = new ArrayList<>(w.size());
 		
@@ -59,17 +61,17 @@ public class NN {
 			if (i == 0) {
 				
 				z.add(dot(x, w.get(i)));
-				a.add(map(z.get(z.size() - 1), NN::activation));
+				a.add(map(z.get(z.size() - 1), NeuralNetwork::activation));
 				
 			} else if (i != w.size() - 1) {
 				
 				z.add(dot(a.get(a.size() - 1), w.get(i)));
-				a.add(map(z.get(z.size() - 1), NN::activation));
+				a.add(map(z.get(z.size() - 1), NeuralNetwork::activation));
 				
 			} else {
 				
 				z.add(dot(a.get(a.size() - 1), w.get(i)));
-				yHat = map(z.get(z.size() - 1), NN::activation);
+				yHat = map(z.get(z.size() - 1), NeuralNetwork::activation);
 				
 			}
 			
@@ -101,26 +103,26 @@ public class NN {
 		}
 		
 		for (int i = w.size() - 1; i >= 0; i--) {
-						
+			
 			if (i == w.size() - 1) {
 				
-				delta.set(i, multiply(sub(yHat, y), map(z.get(i), NN::activationPrime)));
+				delta.set(i, multiply(sub(yHat, y), map(z.get(i), NeuralNetwork::activationPrime)));
 				djdw.set(i, add(dot(transpose(a.get(i - 1)), delta.get(i)), multiply(lambda, w.get(i))));
 				
 			} else if (i != 0) {
 				
-				delta.set(i, multiply(dot(delta.get(i + 1), transpose(w.get(i + 1))), map(z.get(i), NN::activationPrime)));
+				delta.set(i, multiply(dot(delta.get(i + 1), transpose(w.get(i + 1))), map(z.get(i), NeuralNetwork::activationPrime)));
 				djdw.set(i, add(dot(transpose(a.get(i - 1)), delta.get(i)), multiply(lambda, w.get(i))));
 				
 			} else {
 				
-				delta.set(i, multiply(dot(delta.get(i + 1), transpose(w.get(i + 1))), map(z.get(i), NN::activationPrime)));
+				delta.set(i, multiply(dot(delta.get(i + 1), transpose(w.get(i + 1))), map(z.get(i), NeuralNetwork::activationPrime)));
 				djdw.set(i, add(dot(transpose(x), delta.get(i)), multiply(lambda, w.get(i))));
 				
 			}
 			
 		}
-				
+		
 	}
 	
 	public void descend(double learningRate) {
