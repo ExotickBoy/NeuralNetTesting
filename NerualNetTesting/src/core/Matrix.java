@@ -27,9 +27,12 @@ import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.Arrays;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
+
+import javax.lang.model.type.ArrayType;
 
 import org.jocl.CL;
 import org.jocl.Pointer;
@@ -114,24 +117,31 @@ public class Matrix implements Serializable {
 	
 	public Matrix(int rows, int columns) {
 		
-		this(rows, columns, new float[rows * columns]);
+		this(rows, columns, new double[rows * columns]);
 		
 	}
 	
-	public Matrix(int rows, int columns, float[] data) {
+	public Matrix(int rows, int columns, double[] data) {
+		
+		this.data = new float[data.length];
 		
 		this.rows = rows;
 		this.columns = columns;
 		
-		this.data = data;
+		for (int i = 0; i < data.length; i++)
+		{
+			this.data[i] = (float)data[i];
+		}
+		
+		
 		
 	}
 	
-	public Matrix(int rows, int columns, Supplier<Float> generator) {
+	public Matrix(int rows, int columns, Supplier<Double> generator) {
 		
 		this(rows, columns);
 		for (int i = 0; i < rows * columns; i++) {
-			data[i] = generator.get();
+			data[i] = (float)(double)generator.get();
 		}
 		
 	}
@@ -156,9 +166,9 @@ public class Matrix implements Serializable {
 		
 	}
 	
-	public void set(int row, int column, float a) {
+	public void set(int row, int column, double c) {
 		
-		data[row * columns + column] = a;
+		data[row * columns + column] = (float)c;
 		
 	}
 	
@@ -168,13 +178,13 @@ public class Matrix implements Serializable {
 		
 	}
 	
-	public static Matrix map(Matrix input, Function<Float, Float> function) {
+	public static Matrix map(Matrix input, Function<Double, Double> function) {
 		
 		Matrix result = new Matrix(input.rows, input.columns);
 		
 		IntStream.range(0, input.rows * input.columns).parallel().forEach(i -> {
 			
-			result.data[i] = function.apply(input.data[i]);
+			result.data[i] = (float)(double)function.apply((double)input.data[i]);
 			
 		});
 		
@@ -206,19 +216,8 @@ public class Matrix implements Serializable {
 		
 		int i = 0;
 		
-		for (int row = 0; row < a.getRows(); row++) {
-			for (int col = 0; col < a.getColumns(); col++) {
-				A[i++] = (float) a.get(row, col);
-			}
-		}
-		
-		i = 0;
-		
-		for (int row = 0; row < b.getRows(); row++) {
-			for (int col = 0; col < b.getColumns(); col++) {
-				B[i++] = (float) b.get(row, col);
-			}
-		}
+		A = a.data;
+		B = b.data;
 		
 		Pointer pA = Pointer.to(A);
 		Pointer pB = Pointer.to(B);
@@ -266,12 +265,12 @@ public class Matrix implements Serializable {
 		
 	}
 	
-	public static Matrix multiply(float a, Matrix b) {
+	public static Matrix multiply(double a, Matrix b) {
 		
 		Matrix result = new Matrix(b.rows, b.columns);
 		
 		IntStream.range(0, result.rows * result.columns).parallel().forEach(i -> {
-			result.data[i] = a * b.data[i];
+			result.data[i] = (float)a * b.data[i];
 		});
 		
 		return result;
@@ -330,9 +329,9 @@ public class Matrix implements Serializable {
 		
 	}
 	
-	public static float sum(Matrix a) {
+	public static double sum(Matrix a) {
 		
-		return (float) IntStream.range(0, a.rows * a.columns).parallel().mapToDouble(i -> {
+		return (double) IntStream.range(0, a.rows * a.columns).parallel().mapToDouble(i -> {
 			return a.data[i];
 		}).sum();
 		

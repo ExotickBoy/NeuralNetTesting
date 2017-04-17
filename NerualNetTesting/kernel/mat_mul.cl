@@ -1,3 +1,4 @@
+
 __kernel void matmul(
 	const int mdim, const int ndim, const int pdim,
 	__global float *A, __global float *B, __global float *C)
