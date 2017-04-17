@@ -49,8 +49,6 @@ public abstract class TrainingScheme {
 		long startTime = System.currentTimeMillis();
 		double timeElapsed = 0;
 		
-		Matrix yHat = network.forward(xTraining);
-		double trainingCost = network.getCost(xTraining, yTraining, yHat);
 		double testingCost;
 		if (useTesting) {
 			Matrix xTesting = getXTesting();
@@ -59,6 +57,8 @@ public abstract class TrainingScheme {
 		} else {
 			testingCost = 0;
 		}
+		Matrix yHat = network.forward(xTraining);
+		double trainingCost = network.getCost(xTraining, yTraining, yHat);
 		
 		if (callback != null) {
 			callback.iterated(network, 0, trainingCost, testingCost, timeElapsed);
@@ -73,8 +73,6 @@ public abstract class TrainingScheme {
 			
 			descentMethod.descend(network, djdw);
 			
-			yHat = network.forward(xTraining);
-			trainingCost = network.getCost(xTraining, yTraining, yHat);
 			if (useTesting) {
 				Matrix xTesting = getXTesting();
 				Matrix yTesting = getYTesting();
@@ -82,6 +80,8 @@ public abstract class TrainingScheme {
 			} else {
 				testingCost = 0;
 			}
+			yHat = network.forward(xTraining);
+			trainingCost = network.getCost(xTraining, yTraining, yHat);
 			
 			iterateData();
 			

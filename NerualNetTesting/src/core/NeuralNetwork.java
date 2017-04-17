@@ -57,12 +57,17 @@ public class NeuralNetwork implements Serializable {
 		w.add(new Matrix(hiddenLayerSize, outputLayerSize, r::nextGaussian));
 		
 		djdw = new ArrayList<>(w.size());
+		z = new ArrayList<>();
+		a = new ArrayList<>();
 		
 	}
 	
 	public Matrix forward(Matrix x) {
 		
 		assert x.getColumns() == inputLayerSize;
+		
+		z.clear();
+		a.clear();
 		
 		Matrix yHat = null;
 		for (int i = 0; i < w.size(); i++) {
@@ -109,7 +114,7 @@ public class NeuralNetwork implements Serializable {
 		assert x.getColumns() == inputLayerSize && y.getColumns() == outputLayerSize;
 		
 		ArrayList<Matrix> delta = new ArrayList<>();
-		djdw = new ArrayList<>();
+		djdw.clear();
 		for (int i = 0; i < w.size(); i++) {
 			delta.add(null);
 			djdw.add(null);
@@ -182,7 +187,12 @@ public class NeuralNetwork implements Serializable {
 		try {
 			
 			ObjectInputStream ois = new ObjectInputStream(new GZIPInputStream(new FileInputStream(file)));
+			
 			NeuralNetwork network = (NeuralNetwork) ois.readObject();
+			network.a = new ArrayList<>();
+			network.z = new ArrayList<>();
+			network.djdw = new ArrayList<>();
+			
 			ois.close();
 			return network;
 			

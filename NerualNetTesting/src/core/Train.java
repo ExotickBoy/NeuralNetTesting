@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 
 import trainers.BatchTraining;
@@ -28,13 +30,14 @@ public class Train {
 	private static final int TEST_SAMPLES = 10000;
 	
 	private static final int HIDDEN_LAYER_SIZE = 1000;
-	private static final int HIDDEN_LAYER_AMOUNT = 3;
+	private static final int HIDDEN_LAYER_AMOUNT = 15;
 	
 	private static boolean isStochastic;
 	private static boolean useTesting;
 	private static double learningRate;
 	private static double sampleProportion;
 	private static boolean saveEachIteration;
+	private static boolean willLoadLast;
 	
 	public static void main(String[] args) {
 		
@@ -43,6 +46,7 @@ public class Train {
 		learningRate = 0.05;
 		sampleProportion = .01;
 		saveEachIteration = false;
+		willLoadLast = false;
 		
 		for (int i = 0; i < args.length; i++) {
 			
@@ -66,10 +70,15 @@ public class Train {
 				
 				sampleProportion = Double.valueOf(args[++i]);
 				break;
-						
+			
 			case "-S":
 				
 				saveEachIteration = true;
+				break;
+			
+			case "-l":
+				
+				willLoadLast = true;
 				break;
 			
 			default:
@@ -80,7 +89,7 @@ public class Train {
 			}
 			
 		}
-				
+		
 		int trainSamples = (int) (ceil(TRAIN_SAMPLES * sampleProportion));
 		int testSamples = (int) (ceil(TEST_SAMPLES * sampleProportion));
 		
@@ -92,7 +101,25 @@ public class Train {
 		
 		Random random = new Random();
 		
-		NeuralNetwork network = new NeuralNetwork(xTraining.getColumns(), yTraining.getColumns(), HIDDEN_LAYER_SIZE, HIDDEN_LAYER_AMOUNT, 0, random);
+		NeuralNetwork network = null;
+		if (willLoadLast) {
+			
+			ArrayList<File> files = new ArrayList<>(Arrays.asList(new File("nets/").listFiles()));
+			File file = files.stream().max((a, b) -> {
+				
+				return a.getName().compareTo(b.getName());
+				
+			}).orElse(null);
+			
+			network = NeuralNetwork.load(file);
+			
+		}
+		
+		if (network == null) {
+			
+			network = new NeuralNetwork(xTraining.getColumns(), yTraining.getColumns(), HIDDEN_LAYER_SIZE, HIDDEN_LAYER_AMOUNT, 0, random);
+			
+		}
 		
 		TrainingScheme trainer;
 		
@@ -119,7 +146,7 @@ public class Train {
 		
 	}
 	
-	public static void callback(NeuralNetwork network, double iteration, double trainingCost, double testingCost, double timeElapsed) {
+	public static void callback(NeuralNetwork network, int iteration, double trainingCost, double testingCost, double timeElapsed) {
 		
 		System.out.println(iteration + "," + trainingCost + "," + testingCost + "," + timeElapsed);
 		
