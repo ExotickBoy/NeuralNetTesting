@@ -3,16 +3,16 @@ package core;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectOutputStream;
 import java.util.Random;
 
 import trainers.BatchTraining;
 import trainers.SimpleGradientDescent;
 import trainers.StochasticTraining;
 import trainers.TrainingScheme;
+
+import static java.lang.Math.*;
 
 import org.jocl.*;
 
@@ -32,8 +32,8 @@ public class Train {
 	private static final int HIDDEN_LAYER_SIZE = 1000;
 	private static final int HIDDEN_LAYER_AMOUNT = 3;
 	
-	private static final double LEARNING_RATE = 1;
-	private static final double SAMPLE_PROPORTION = .1;
+	private static final double LEARNING_RATE = 0.05;
+	private static final double SAMPLE_PROPORTION = 1 / 3000d;
 	
 	public static void main(String[] args) {
 		
@@ -63,8 +63,8 @@ public class Train {
 			
 		}
 		
-		int trainSamples = (int) (TRAIN_SAMPLES * SAMPLE_PROPORTION);
-		int testSamples = (int) (TEST_SAMPLES * SAMPLE_PROPORTION);
+		int trainSamples = (int) (ceil(TRAIN_SAMPLES * SAMPLE_PROPORTION));
+		int testSamples = (int) (ceil(TEST_SAMPLES * SAMPLE_PROPORTION));
 		
 		Matrix xTraining = getX(new File(TRAIN_IMAGES), trainSamples, SAMPLE_WIDTH, SAMPLE_HEIGHT);
 		Matrix yTraining = getY(new File(TRAIN_LABELS), trainSamples);
@@ -74,7 +74,7 @@ public class Train {
 		
 		Random random = new Random();
 		
-		NeuralNetwork network = new NeuralNetwork(xTraining.getColumns(), yTraining.getColumns(), HIDDEN_LAYER_SIZE, HIDDEN_LAYER_AMOUNT, random);
+		NeuralNetwork network = new NeuralNetwork(xTraining.getColumns(), yTraining.getColumns(), HIDDEN_LAYER_SIZE, HIDDEN_LAYER_AMOUNT, 0, random);
 		
 		TrainingScheme trainer;
 		
@@ -91,25 +91,12 @@ public class Train {
 		trainer.setCallBack((n, iteration, trainingCost, testingCost, timeElapsed) -> {
 			
 			System.out.println(iteration + "," + trainingCost + "," + testingCost + "," + timeElapsed);
-			try {
-				ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File("network" + iteration + ".nwk")));
-				oos.writeObject(network);
-				oos.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			network.save(new File("network" + iteration + ".nwk"));
 			
 		});
 		
 		trainer.train();
-		
-		try {
-			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File("network.nwk")));
-			oos.writeObject(network);
-			oos.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		network.save(new File("network.nwk"));
 		
 	}
 	

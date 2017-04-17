@@ -51,8 +51,15 @@ public abstract class TrainingScheme {
 
 		Matrix yHat = network.forward(xTraining);
 		double trainingCost = network.getCost(xTraining, yTraining, yHat);
-		double testingCost = useTesting ? network.getCost(allXTesting, allYTesting, network.forward(allXTesting)) : 0;
-
+		double testingCost;
+		if (useTesting) {
+			Matrix xTesting = getXTesting();
+			Matrix yTesting = getYTesting();
+			testingCost = network.getCost(xTesting, yTesting);
+		} else {
+			testingCost = 0;
+		}
+		
 		if (callback != null) {
 			callback.iterated(network, 0, trainingCost, testingCost, timeElapsed);
 		}
