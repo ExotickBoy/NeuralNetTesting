@@ -10,11 +10,11 @@ public abstract class TrainingScheme {
 	private boolean defaultLimit = true;
 
 	private boolean useMaxIterations = false;
-	private boolean useMaxTime = true;
-	private boolean useMinCost = false;
+	private boolean useMaxTime = false;
+	private boolean useMinCost = true;
 	private int maxIterations = 0;
-	private int maxTime = 10 * 60;
-	private int minCost = 0;
+	private int maxTime = 0;
+	private double minCost = 0.01;
 
 	private Matrix allXTraining;
 	private Matrix allYTraining;
