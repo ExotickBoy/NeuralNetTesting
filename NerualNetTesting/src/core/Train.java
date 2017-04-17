@@ -99,7 +99,7 @@ public class Train {
 		if (isStochastic) {
 			
 			trainer = new StochasticTraining(xTraining, yTraining, network, new SimpleGradientDescent(learningRate), random);
-			System.out.println("Using Stochasti Training");
+			System.out.println("Using Stochastic Training");
 			
 		} else {
 			

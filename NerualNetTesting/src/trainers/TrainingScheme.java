@@ -64,7 +64,11 @@ public abstract class TrainingScheme {
 			callback.iterated(network, 0, trainingCost, testingCost, timeElapsed);
 		}
 		
-		for (int iteration = 0; (!useMaxIterations || iteration < maxIterations) && (!useMinCost || trainingCost < minCost) && (!useMaxTime || timeElapsed < maxTime); iteration++) {
+		System.out.println(useMaxIterations);
+		System.out.println(useMinCost);
+		System.out.println(useMaxTime);
+		
+		for (int iteration = 0; (!useMaxIterations || iteration < maxIterations) && (!useMinCost || trainingCost > minCost) && (!useMaxTime || timeElapsed < maxTime); iteration++) {
 			
 			xTraining = getXTraining();
 			yTraining = getYTraining();
@@ -153,7 +157,7 @@ public abstract class TrainingScheme {
 	public void setMaxIterations(int maxIterations) {
 		
 		if (defaultLimit) {
-			useMaxTime = false;
+			useMinCost = false;
 			defaultLimit = false;
 		}
 		
@@ -165,6 +169,7 @@ public abstract class TrainingScheme {
 	public void setMaxTime(int maxTime) {
 		
 		if (defaultLimit) {
+			useMinCost = false;
 			defaultLimit = false;
 		}
 		
@@ -176,7 +181,7 @@ public abstract class TrainingScheme {
 	public void setMinCost(int minCost) {
 		
 		if (defaultLimit) {
-			useMaxTime = false;
+			useMinCost = true;
 			defaultLimit = false;
 		}
 		
