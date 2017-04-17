@@ -44,53 +44,43 @@ public class Train {
 		sampleProportion = .01;
 		saveEachIteration = false;
 		
-		if (args.length == 1) {
+		for (int i = 0; i < args.length; i++) {
 			
-			for (int i = 0; i < args.length; i++) {
+			switch (args[i]) {
+			
+			case "-s":
 				
-				switch (args[i]) {
+				isStochastic = true;
+				break;
+			
+			case "-t":
 				
-				case "-s":
-					
-					isStochastic = true;
-					break;
+				useTesting = true;
+				break;
+			
+			case "-r":
+				learningRate = Double.valueOf(args[++i]);
+				break;
+			
+			case "-p":
 				
-				case "-t":
-					
-					useTesting = true;
-					break;
+				sampleProportion = Double.valueOf(args[++i]);
+				break;
+						
+			case "-S":
 				
-				case "-r":
-					
-					learningRate = Double.valueOf(args[i++]);
-					break;
+				saveEachIteration = true;
+				break;
+			
+			default:
 				
-				case "-p":
-					
-					sampleProportion = Double.valueOf(args[i++]);
-					break;
-				
-				case "-g":
-					
-					learningRate = Double.valueOf(args[i++]);
-					break;
-				
-				case "-S":
-					
-					saveEachIteration = true;
-					break;
-				
-				default:
-					
-					assert false;
-					break;
-				
-				}
-				
+				assert false;
+				break;
+			
 			}
 			
 		}
-		
+				
 		int trainSamples = (int) (ceil(TRAIN_SAMPLES * sampleProportion));
 		int testSamples = (int) (ceil(TEST_SAMPLES * sampleProportion));
 		
@@ -120,7 +110,7 @@ public class Train {
 		
 		if (useTesting) {
 			trainer.setTestingData(xTesting, yTesting);
-			System.out.println("Using testing");
+			System.out.println("Using Testing");
 		}
 		trainer.setCallBack(Train::callback);
 		
