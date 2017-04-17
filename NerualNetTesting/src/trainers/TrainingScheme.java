@@ -64,20 +64,16 @@ public abstract class TrainingScheme {
 			callback.iterated(network, 0, trainingCost, testingCost, timeElapsed);
 		}
 		
-		System.out.println(useMaxIterations);
-		System.out.println(useMinCost);
-		System.out.println(useMaxTime);
-		
 		for (int iteration = 0; (!useMaxIterations || iteration < maxIterations) && (!useMinCost || trainingCost > minCost) && (!useMaxTime || timeElapsed < maxTime); iteration++) {
 			
 			xTraining = getXTraining();
 			yTraining = getYTraining();
 			
-			yHat = network.forward(xTraining);
 			ArrayList<Matrix> djdw = network.getCostPrime(xTraining, yTraining, yHat);
 			
 			descentMethod.descend(network, djdw);
 			
+			yHat = network.forward(xTraining);
 			trainingCost = network.getCost(xTraining, yTraining, yHat);
 			if (useTesting) {
 				Matrix xTesting = getXTesting();
@@ -192,7 +188,7 @@ public abstract class TrainingScheme {
 	
 	public interface CallBack {
 		
-		public void iterated(NeuralNetwork network, double iteration, double trainingCost, double testingCost, double timeElapsed);
+		public void iterated(NeuralNetwork network, int iteration, double trainingCost, double testingCost, double timeElapsed);
 		
 	}
 	
