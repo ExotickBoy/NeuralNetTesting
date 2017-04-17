@@ -8,7 +8,7 @@ import core.NeuralNetwork;
 
 public class StochasticTraining extends TrainingScheme {
 	
-	private static final int SGD_MINIBATCH_SIZE = 100;
+	private static final int SGD_MINIBATCH_SIZE = 20;
 	
 	private int index;
 	private Random random;

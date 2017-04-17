@@ -14,6 +14,8 @@ import trainers.SimpleGradientDescent;
 import trainers.StochasticTraining;
 import trainers.TrainingScheme;
 
+import org.jocl.*;
+
 public class Train {
 	
 	private static final int SAMPLE_WIDTH = 28;
@@ -85,7 +87,7 @@ public class Train {
 			trainer = new BatchTraining(xTraining, yTraining, network, new SimpleGradientDescent(LEARNING_RATE));
 			
 		}
-		trainer.setTestingData(xTesting, yTesting);
+		//trainer.setTestingData(xTesting, yTesting);
 		trainer.setCallBack((n, iteration, trainingCost, testingCost, timeElapsed) -> {
 			
 			System.out.println(iteration + "," + trainingCost + "," + testingCost + "," + timeElapsed);
