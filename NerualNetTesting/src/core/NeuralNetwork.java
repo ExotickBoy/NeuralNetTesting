@@ -32,14 +32,14 @@ public class NeuralNetwork implements Serializable {
 	// private int hiddenLayerSize;
 	// private int numberOfHiddenLayers;
 	
-	private double overfittingPenalty = 0;
+	private float overfittingPenalty = 0;
 	
 	private ArrayList<Matrix> w = new ArrayList<>(); // -1
 	private transient ArrayList<Matrix> djdw = new ArrayList<>(); // -1
 	private transient ArrayList<Matrix> a = new ArrayList<>(); // -2
 	private transient ArrayList<Matrix> z = new ArrayList<>(); // -2
 	
-	public NeuralNetwork(int inputLayerSize, int outputLayerSize, int hiddenLayerSize, int numberOfHiddenLayers, double overfittingPenalty, Random r) {
+	public NeuralNetwork(int inputLayerSize, int outputLayerSize, int hiddenLayerSize, int numberOfHiddenLayers, float overfittingPenalty, Random r) {
 		
 		assert numberOfHiddenLayers >= 1;
 		
