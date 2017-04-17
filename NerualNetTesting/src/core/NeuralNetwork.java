@@ -166,6 +166,7 @@ public class NeuralNetwork implements Serializable {
 		
 		try {
 			
+			file.getParentFile().mkdirs();
 			ObjectOutputStream oos = new ObjectOutputStream(new GZIPOutputStream(new FileOutputStream(file)));
 			oos.writeObject(this);
 			oos.close();

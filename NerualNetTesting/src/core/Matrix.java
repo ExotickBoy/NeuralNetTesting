@@ -10,7 +10,7 @@ import java.util.stream.IntStream;
 public class Matrix implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
-
+	
 	private static final NumberFormat FORMATTER = new DecimalFormat("#0.00");
 	
 	private int rows;

@@ -1,6 +1,8 @@
 
 package core;
 
+import static java.lang.Math.ceil;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -11,10 +13,6 @@ import trainers.BatchTraining;
 import trainers.SimpleGradientDescent;
 import trainers.StochasticTraining;
 import trainers.TrainingScheme;
-
-import static java.lang.Math.*;
-
-import org.jocl.*;
 
 public class Train {
 	
@@ -32,12 +30,19 @@ public class Train {
 	private static final int HIDDEN_LAYER_SIZE = 1000;
 	private static final int HIDDEN_LAYER_AMOUNT = 3;
 	
-	private static final double LEARNING_RATE = 0.05;
-	private static final double SAMPLE_PROPORTION = 1 / 3000d;
+	private static boolean isStochastic;
+	private static boolean useTesting;
+	private static double learningRate;
+	private static double sampleProportion;
+	private static boolean saveEachIteration;
 	
 	public static void main(String[] args) {
 		
-		boolean isStochastic = false;
+		isStochastic = false;
+		useTesting = false;
+		learningRate = 0.05;
+		sampleProportion = .01;
+		saveEachIteration = false;
 		
 		if (args.length == 1) {
 			
@@ -47,9 +52,32 @@ public class Train {
 				
 				case "-s":
 					
-					System.out.println("Using sgd");
 					isStochastic = true;
+					break;
+				
+				case "-t":
 					
+					useTesting = true;
+					break;
+				
+				case "-r":
+					
+					learningRate = Double.valueOf(args[i++]);
+					break;
+				
+				case "-p":
+					
+					sampleProportion = Double.valueOf(args[i++]);
+					break;
+				
+				case "-g":
+					
+					learningRate = Double.valueOf(args[i++]);
+					break;
+				
+				case "-S":
+					
+					saveEachIteration = true;
 					break;
 				
 				default:
@@ -63,8 +91,8 @@ public class Train {
 			
 		}
 		
-		int trainSamples = (int) (ceil(TRAIN_SAMPLES * SAMPLE_PROPORTION));
-		int testSamples = (int) (ceil(TEST_SAMPLES * SAMPLE_PROPORTION));
+		int trainSamples = (int) (ceil(TRAIN_SAMPLES * sampleProportion));
+		int testSamples = (int) (ceil(TEST_SAMPLES * sampleProportion));
 		
 		Matrix xTraining = getX(new File(TRAIN_IMAGES), trainSamples, SAMPLE_WIDTH, SAMPLE_HEIGHT);
 		Matrix yTraining = getY(new File(TRAIN_LABELS), trainSamples);
@@ -80,23 +108,36 @@ public class Train {
 		
 		if (isStochastic) {
 			
-			trainer = new StochasticTraining(xTraining, yTraining, network, new SimpleGradientDescent(LEARNING_RATE), random);
+			trainer = new StochasticTraining(xTraining, yTraining, network, new SimpleGradientDescent(learningRate), random);
+			System.out.println("Using Stochasti Training");
 			
 		} else {
 			
-			trainer = new BatchTraining(xTraining, yTraining, network, new SimpleGradientDescent(LEARNING_RATE));
+			trainer = new BatchTraining(xTraining, yTraining, network, new SimpleGradientDescent(learningRate));
+			System.out.println("Using Batch Training");
 			
 		}
-		//trainer.setTestingData(xTesting, yTesting);
-		trainer.setCallBack((n, iteration, trainingCost, testingCost, timeElapsed) -> {
-			
-			System.out.println(iteration + "," + trainingCost + "," + testingCost + "," + timeElapsed);
-			network.save(new File("network" + iteration + ".nwk"));
-			
-		});
+		
+		if (useTesting) {
+			trainer.setTestingData(xTesting, yTesting);
+			System.out.println("Using testing");
+		}
+		trainer.setCallBack(Train::callback);
 		
 		trainer.train();
-		network.save(new File("network.nwk"));
+		network.save(new File("nets/network.nwk"));
+		
+	}
+	
+	public static void callback(NeuralNetwork network, double iteration, double trainingCost, double testingCost, double timeElapsed) {
+		
+		System.out.println(iteration + "," + trainingCost + "," + testingCost + "," + timeElapsed);
+		
+		if (saveEachIteration) {
+			
+			network.save(new File("nets/network" + iteration + ".nwk"));
+			
+		}
 		
 	}
 	
