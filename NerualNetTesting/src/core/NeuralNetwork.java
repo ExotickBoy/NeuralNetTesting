@@ -11,9 +11,17 @@ import static core.Matrix.transpose;
 import static java.lang.Math.E;
 import static java.lang.Math.pow;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class NeuralNetwork implements Serializable {
 	
@@ -149,6 +157,38 @@ public class NeuralNetwork implements Serializable {
 	public void setW(ArrayList<Matrix> w) {
 		
 		this.w = w;
+		
+	}
+	
+	public void save(File file) {
+		
+		try {
+			
+			ObjectOutputStream oos = new ObjectOutputStream(new GZIPOutputStream(new FileOutputStream(file)));
+			oos.writeObject(this);
+			oos.close();
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+	public static NeuralNetwork load(File file) {
+		
+		try {
+			
+			ObjectInputStream ois = new ObjectInputStream(new GZIPInputStream(new FileInputStream(file)));
+			NeuralNetwork network = (NeuralNetwork) ois.readObject();
+			ois.close();
+			return network;
+			
+		} catch (ClassNotFoundException | IOException e) {
+			
+			e.printStackTrace();
+			return null;
+			
+		}
 		
 	}
 	

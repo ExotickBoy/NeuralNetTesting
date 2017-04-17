@@ -3,12 +3,9 @@ package core;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectOutputStream;
 import java.util.Random;
-import java.util.zip.GZIPOutputStream;
 
 import trainers.BatchTraining;
 import trainers.SimpleGradientDescent;
@@ -90,25 +87,12 @@ public class Train {
 		trainer.setCallBack((n, iteration, trainingCost, testingCost, timeElapsed) -> {
 			
 			System.out.println(iteration + "," + trainingCost + "," + testingCost + "," + timeElapsed);
-			try {
-				ObjectOutputStream oos = new ObjectOutputStream(new GZIPOutputStream(new FileOutputStream(new File("network" + iteration + ".nwk"))));
-				oos.writeObject(network);
-				oos.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			network.save(new File("network" + iteration + ".nwk"));
 			
 		});
 		
 		trainer.train();
-		
-		try {
-			ObjectOutputStream oos = new ObjectOutputStream(new GZIPOutputStream(new FileOutputStream(new File("network.nwk"))));
-			oos.writeObject(network);
-			oos.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		network.save(new File("network.nwk"));
 		
 	}
 	
