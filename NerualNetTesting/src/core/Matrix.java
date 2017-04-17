@@ -61,70 +61,64 @@ public class Matrix implements Serializable {
 	private int rows;
 	private int columns;
 	
-	private double[][] data;
+	private float[] data;
 	
 	static {
-
 		
 		CL.setExceptionsEnabled(true);
 		
 		final int platformIndex = 0;
-        final long deviceType = CL_DEVICE_TYPE_ALL;
-        final int deviceIndex = 0;
-
-        // Enable exceptions and subsequently omit error checks in this sample
-        CL.setExceptionsEnabled(true);
-
-        // Obtain the number of platforms
-        int numPlatformsArray[] = new int[1];
-        clGetPlatformIDs(0, null, numPlatformsArray);
-        int numPlatforms = numPlatformsArray[0];
-
-        // Obtain a platform ID
-        cl_platform_id platforms[] = new cl_platform_id[numPlatforms];
-        clGetPlatformIDs(platforms.length, platforms, null);
-        cl_platform_id platform = platforms[platformIndex];
-
-        // Initialize the context properties
-        cl_context_properties contextProperties = new cl_context_properties();
-        contextProperties.addProperty(CL_CONTEXT_PLATFORM, platform);
-        
-        // Obtain the number of devices for the platform
-        int numDevicesArray[] = new int[1];
-        clGetDeviceIDs(platform, deviceType, 0, null, numDevicesArray);
-        int numDevices = numDevicesArray[0];
-        
-        // Obtain a device ID 
-        cl_device_id devices[] = new cl_device_id[numDevices];
-        clGetDeviceIDs(platform, deviceType, numDevices, devices, null);
-        cl_device_id device = devices[deviceIndex];
-
-        // Create a context for the selected device
-        context = clCreateContext(
-            contextProperties, 1, new cl_device_id[]{device}, 
-            null, null, null);
-
+		final long deviceType = CL_DEVICE_TYPE_ALL;
+		final int deviceIndex = 0;
 		
-	
-        // Create a command-queue for the selected device
-        commandQueue = 
-            clCreateCommandQueue(context, device, 0, null);
-        
-        String code = loadCLCode("kernel/mat_mul.cl");
+		// Enable exceptions and subsequently omit error checks in this sample
+		CL.setExceptionsEnabled(true);
 		
-		program = clCreateProgramWithSource(context, 1, new String[]{code}, null, null);
-		 clBuildProgram(program, 0, null, null, null, null);
+		// Obtain the number of platforms
+		int numPlatformsArray[] = new int[1];
+		clGetPlatformIDs(0, null, numPlatformsArray);
+		int numPlatforms = numPlatformsArray[0];
+		
+		// Obtain a platform ID
+		cl_platform_id platforms[] = new cl_platform_id[numPlatforms];
+		clGetPlatformIDs(platforms.length, platforms, null);
+		cl_platform_id platform = platforms[platformIndex];
+		
+		// Initialize the context properties
+		cl_context_properties contextProperties = new cl_context_properties();
+		contextProperties.addProperty(CL_CONTEXT_PLATFORM, platform);
+		
+		// Obtain the number of devices for the platform
+		int numDevicesArray[] = new int[1];
+		clGetDeviceIDs(platform, deviceType, 0, null, numDevicesArray);
+		int numDevices = numDevicesArray[0];
+		
+		// Obtain a device ID
+		cl_device_id devices[] = new cl_device_id[numDevices];
+		clGetDeviceIDs(platform, deviceType, numDevices, devices, null);
+		cl_device_id device = devices[deviceIndex];
+		
+		// Create a context for the selected device
+		context = clCreateContext(contextProperties, 1, new cl_device_id[] { device }, null, null, null);
+		
+		// Create a command-queue for the selected device
+		commandQueue = clCreateCommandQueue(context, device, 0, null);
+		
+		String code = loadCLCode("kernel/mat_mul.cl");
+		
+		program = clCreateProgramWithSource(context, 1, new String[] { code }, null, null);
+		clBuildProgram(program, 0, null, null, null, null);
 		
 		kernel = clCreateKernel(program, "matmul", null);
 	}
 	
 	public Matrix(int rows, int columns) {
 		
-		this(rows, columns, new double[rows][columns]);
+		this(rows, columns, new float[rows * columns]);
 		
 	}
 	
-	public Matrix(int rows, int columns, double[][] data) {
+	public Matrix(int rows, int columns, float[] data) {
 		
 		this.rows = rows;
 		this.columns = columns;
@@ -133,13 +127,11 @@ public class Matrix implements Serializable {
 		
 	}
 	
-	public Matrix(int rows, int columns, Supplier<Double> generator) {
+	public Matrix(int rows, int columns, Supplier<Float> generator) {
 		
 		this(rows, columns);
-		for (int row = 0; row < rows; row++) {
-			for (int column = 0; column < columns; column++) {
-				data[row][column] = generator.get();
-			}
+		for (int i = 0; i < rows * columns; i++) {
+			data[i] = generator.get();
 		}
 		
 	}
@@ -164,33 +156,35 @@ public class Matrix implements Serializable {
 		
 	}
 	
-	public void set(int row, int column, double a) {
+	public void set(int row, int column, float a) {
 		
-		data[row][column] = a;
+		data[row * columns + column] = a;
 		
 	}
 	
 	public double get(int row, int column) {
 		
-		return data[row][column];
+		return data[row * columns + column];
 		
 	}
 	
-	public static Matrix map(Matrix input, Function<Double, Double> function) {
+	public static Matrix map(Matrix input, Function<Float, Float> function) {
 		
 		Matrix result = new Matrix(input.rows, input.columns);
 		
-		IntStream.range(0, input.rows).parallel().forEach(row -> {
-			for (int column = 0; column < input.columns; column++) {
-				result.data[row][column] = function.apply(input.data[row][column]);
-			}
+		IntStream.range(0, input.rows * input.columns).parallel().forEach(i -> {
+			
+			result.data[i] = function.apply(input.data[i]);
+			
 		});
 		
 		return result;
 		
 	}
 	
-	public static Matrix dot(Matrix a, Matrix b){
+	public static Matrix dot(Matrix a, Matrix b) {
+		
+		assert a.columns == b.rows;
 		
 		int mdim, ndim, pdim;
 		
@@ -212,21 +206,17 @@ public class Matrix implements Serializable {
 		
 		int i = 0;
 		
-		for (int row = 0; row < a.getRows(); row++)
-		{
-			for (int col = 0; col < a.getColumns(); col++)
-			{
-				A[i++] = (float)a.get(row, col);
+		for (int row = 0; row < a.getRows(); row++) {
+			for (int col = 0; col < a.getColumns(); col++) {
+				A[i++] = (float) a.get(row, col);
 			}
 		}
 		
 		i = 0;
 		
-		for (int row = 0; row < b.getRows(); row++)
-		{
-			for (int col = 0; col < b.getColumns(); col++)
-			{
-				B[i++] = (float)b.get(row, col);
+		for (int row = 0; row < b.getRows(); row++) {
+			for (int col = 0; col < b.getColumns(); col++) {
+				B[i++] = (float) b.get(row, col);
 			}
 		}
 		
@@ -243,14 +233,12 @@ public class Matrix implements Serializable {
 		clEnqueueWriteBuffer(commandQueue, aIn, CL_TRUE, 0, Sizeof.cl_float * szA, pA, 0, null, null);
 		clEnqueueWriteBuffer(commandQueue, bIn, CL_TRUE, 0, Sizeof.cl_float * szB, pB, 0, null, null);
 		
-		
-		
-		clSetKernelArg(kernel, 0, Sizeof.cl_int, Pointer.to(new int[]{mdim}));
-		clSetKernelArg(kernel, 1, Sizeof.cl_int, Pointer.to(new int[]{ndim}));
-		clSetKernelArg(kernel, 2, Sizeof.cl_int, Pointer.to(new int[]{pdim}));
-		clSetKernelArg(kernel, 3, Sizeof.cl_mem, Pointer.to(new cl_mem[]{aIn}));
-		clSetKernelArg(kernel, 4, Sizeof.cl_mem, Pointer.to(new cl_mem[]{bIn}));
-		clSetKernelArg(kernel, 5, Sizeof.cl_mem, Pointer.to(new cl_mem[]{cOut}));
+		clSetKernelArg(kernel, 0, Sizeof.cl_int, Pointer.to(new int[] { mdim }));
+		clSetKernelArg(kernel, 1, Sizeof.cl_int, Pointer.to(new int[] { ndim }));
+		clSetKernelArg(kernel, 2, Sizeof.cl_int, Pointer.to(new int[] { pdim }));
+		clSetKernelArg(kernel, 3, Sizeof.cl_mem, Pointer.to(new cl_mem[] { aIn }));
+		clSetKernelArg(kernel, 4, Sizeof.cl_mem, Pointer.to(new cl_mem[] { bIn }));
+		clSetKernelArg(kernel, 5, Sizeof.cl_mem, Pointer.to(new cl_mem[] { cOut }));
 		
 		global[0] = ndim;
 		global[1] = mdim;
@@ -264,10 +252,8 @@ public class Matrix implements Serializable {
 		
 		i = 0;
 		
-		for (int row = 0; row < c.getRows(); row++)
-		{
-			for (int col = 0; col < c.getColumns(); col++)
-			{
+		for (int row = 0; row < c.getRows(); row++) {
+			for (int col = 0; col < c.getColumns(); col++) {
 				c.set(row, col, C[i++]);
 			}
 		}
@@ -275,41 +261,17 @@ public class Matrix implements Serializable {
 		clReleaseMemObject(aIn);
 		clReleaseMemObject(bIn);
 		clReleaseMemObject(cOut);
-
+		
 		return c;
 		
 	}
 	
-	private static String loadCLCode(String fileName) {
-		
-		try {
-			BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(fileName)));
-			StringBuffer sb = new StringBuffer();
-			String line = null;
-			while (true) {
-				line = br.readLine();
-				if (line == null) {
-					break;
-				}
-				sb.append(line).append("\n");
-			}
-			return sb.toString();
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.exit(1);
-			return null;
-		}
-		
-	}
-	
-	public static Matrix multiply(double a, Matrix b) {
+	public static Matrix multiply(float a, Matrix b) {
 		
 		Matrix result = new Matrix(b.rows, b.columns);
 		
-		IntStream.range(0, result.rows).parallel().forEach(row -> {
-			for (int column = 0; column < result.columns; column++) {
-				result.data[row][column] = a * b.data[row][column];
-			}
+		IntStream.range(0, result.rows * result.columns).parallel().forEach(i -> {
+			result.data[i] = a * b.data[i];
 		});
 		
 		return result;
@@ -322,10 +284,8 @@ public class Matrix implements Serializable {
 		
 		Matrix result = new Matrix(a.rows, b.columns);
 		
-		IntStream.range(0, result.rows).parallel().forEach(row -> {
-			for (int column = 0; column < result.columns; column++) {
-				result.data[row][column] = a.data[row][column] * b.data[row][column];
-			}
+		IntStream.range(0, result.rows * result.columns).parallel().forEach(i -> {
+			result.data[i] = a.data[i] * b.data[i];
 		});
 		
 		return result;
@@ -333,12 +293,14 @@ public class Matrix implements Serializable {
 	}
 	
 	public static Matrix transpose(Matrix a) {
+		
 		Matrix result = new Matrix(a.columns, a.rows);
-		IntStream.range(0, result.rows).parallel().forEach(row -> {
-			for (int column = 0; column < result.columns; column++) {
-				result.data[row][column] = a.data[column][row];
+		for (int row = 0; row < a.rows; row++) {
+			for (int column = 0; column < a.columns; column++) {
+				result.data[a.columns * row + row]= a.data[row * a.columns + column];
 			}
-		});
+		}
+		
 		return result;
 	}
 	
@@ -347,10 +309,8 @@ public class Matrix implements Serializable {
 		assert a.rows == b.rows && a.columns == b.columns;
 		
 		Matrix result = new Matrix(a.rows, a.columns);
-		IntStream.range(0, result.rows).parallel().forEach(row -> {
-			for (int column = 0; column < result.columns; column++) {
-				result.data[row][column] = a.data[row][column] + b.data[row][column];
-			}
+		IntStream.range(0, result.rows * result.columns).parallel().forEach(i -> {
+			result.data[i] = a.data[i] + b.data[i];
 		});
 		
 		return result;
@@ -362,22 +322,18 @@ public class Matrix implements Serializable {
 		assert a.rows == b.rows && a.columns == b.columns;
 		
 		Matrix result = new Matrix(a.rows, a.columns);
-		IntStream.range(0, result.rows).parallel().forEach(row -> {
-			for (int column = 0; column < a.columns; column++) {
-				result.data[row][column] = a.data[row][column] - b.data[row][column];
-			}
+		IntStream.range(0, result.rows * result.columns).parallel().forEach(i -> {
+			result.data[i] = a.data[i] - b.data[i];
 		});
 		
 		return result;
 		
 	}
 	
-	public static double sum(Matrix a) {
+	public static float sum(Matrix a) {
 		
-		return IntStream.range(0, a.rows).parallel().mapToDouble(row -> {
-			return IntStream.range(0, a.columns).parallel().mapToDouble(column -> {
-				return a.data[row][column];
-			}).sum();
+		return (float) IntStream.range(0, a.rows * a.columns).parallel().mapToDouble(i -> {
+			return a.data[i];
 		}).sum();
 		
 	}
@@ -387,14 +343,33 @@ public class Matrix implements Serializable {
 		
 		StringBuilder string = new StringBuilder();
 		
+		int i = 0;
 		for (int row = 0; row < rows; row++) {
 			for (int column = 0; column < columns; column++) {
-				string.append(FORMATTER.format(data[row][column]) + ",\t");
+				string.append(FORMATTER.format(data[i++]) + ",\t");
 			}
 			string.append("\n");
 		}
 		
 		return string.toString();
+		
+	}
+	
+	private static String loadCLCode(String fileName) {
+		
+		try {
+			BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(fileName)));
+			StringBuilder sb = new StringBuilder();
+			String line = null;
+			while ((line = br.readLine()) != null) {
+				sb.append(line).append("\n");
+			}
+			br.close();
+			return sb.toString();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
 		
 	}
 	
