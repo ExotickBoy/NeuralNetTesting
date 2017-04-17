@@ -12,6 +12,8 @@ import trainers.SimpleGradientDescent;
 import trainers.StochasticTraining;
 import trainers.TrainingScheme;
 
+import static java.lang.Math.*;
+
 public class Train {
 	
 	private static final int SAMPLE_WIDTH = 28;
@@ -28,8 +30,8 @@ public class Train {
 	private static final int HIDDEN_LAYER_SIZE = 1000;
 	private static final int HIDDEN_LAYER_AMOUNT = 3;
 	
-	private static final double LEARNING_RATE = 1;
-	private static final double SAMPLE_PROPORTION = .1;
+	private static final double LEARNING_RATE = 0.05;
+	private static final double SAMPLE_PROPORTION = 1 / 3000d;
 	
 	public static void main(String[] args) {
 		
@@ -59,8 +61,8 @@ public class Train {
 			
 		}
 		
-		int trainSamples = (int) (TRAIN_SAMPLES * SAMPLE_PROPORTION);
-		int testSamples = (int) (TEST_SAMPLES * SAMPLE_PROPORTION);
+		int trainSamples = (int) (ceil(TRAIN_SAMPLES * SAMPLE_PROPORTION));
+		int testSamples = (int) (ceil(TEST_SAMPLES * SAMPLE_PROPORTION));
 		
 		Matrix xTraining = getX(new File(TRAIN_IMAGES), trainSamples, SAMPLE_WIDTH, SAMPLE_HEIGHT);
 		Matrix yTraining = getY(new File(TRAIN_LABELS), trainSamples);
@@ -70,7 +72,7 @@ public class Train {
 		
 		Random random = new Random();
 		
-		NeuralNetwork network = new NeuralNetwork(xTraining.getColumns(), yTraining.getColumns(), HIDDEN_LAYER_SIZE, HIDDEN_LAYER_AMOUNT, random);
+		NeuralNetwork network = new NeuralNetwork(xTraining.getColumns(), yTraining.getColumns(), HIDDEN_LAYER_SIZE, HIDDEN_LAYER_AMOUNT, 0, random);
 		
 		TrainingScheme trainer;
 		

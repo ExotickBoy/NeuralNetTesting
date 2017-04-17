@@ -27,19 +27,19 @@ public class NeuralNetwork implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 	
-	private static final double OVERFITTING_PENALTY = 0.0001;
-	
 	private int inputLayerSize;
 	private int outputLayerSize;
 	// private int hiddenLayerSize;
 	// private int numberOfHiddenLayers;
+	
+	private double overfittingPenalty = 0;
 	
 	private ArrayList<Matrix> w = new ArrayList<>(); // -1
 	private transient ArrayList<Matrix> djdw = new ArrayList<>(); // -1
 	private transient ArrayList<Matrix> a = new ArrayList<>(); // -2
 	private transient ArrayList<Matrix> z = new ArrayList<>(); // -2
 	
-	public NeuralNetwork(int inputLayerSize, int outputLayerSize, int hiddenLayerSize, int numberOfHiddenLayers, Random r) {
+	public NeuralNetwork(int inputLayerSize, int outputLayerSize, int hiddenLayerSize, int numberOfHiddenLayers, double overfittingPenalty, Random r) {
 		
 		assert numberOfHiddenLayers >= 1;
 		
@@ -48,11 +48,13 @@ public class NeuralNetwork implements Serializable {
 		// this.hiddenLayerSize = hiddenLayerSize;
 		// this.numberOfHiddenLayers = numberOfHiddenLayers;
 		
-		w.add(new Matrix(inputLayerSize, hiddenLayerSize, r::nextDouble));
+		this.overfittingPenalty = overfittingPenalty;
+		
+		w.add(new Matrix(inputLayerSize, hiddenLayerSize, r::nextGaussian));
 		for (int i = 0; i < numberOfHiddenLayers - 1; i++) {
-			w.add(new Matrix(hiddenLayerSize, hiddenLayerSize, r::nextDouble));
+			w.add(new Matrix(hiddenLayerSize, hiddenLayerSize, r::nextGaussian));
 		}
-		w.add(new Matrix(hiddenLayerSize, outputLayerSize, r::nextDouble));
+		w.add(new Matrix(hiddenLayerSize, outputLayerSize, r::nextGaussian));
 		
 		djdw = new ArrayList<>(w.size());
 		
@@ -94,7 +96,7 @@ public class NeuralNetwork implements Serializable {
 	
 	public double getCost(Matrix x, Matrix y, Matrix yHat) {
 		
-		return 0.5 * sum(map(sub(y, yHat), z -> z * z)) / x.getRows() + OVERFITTING_PENALTY * w.stream().mapToDouble(w -> sum(map(w, z -> z * z))).sum() / 2;
+		return 0.5 * sum(map(sub(y, yHat), z -> z * z)) / x.getRows() + overfittingPenalty * w.stream().mapToDouble(w -> sum(map(w, z -> z * z))).sum() / 2;
 		
 	}
 	
@@ -118,17 +120,17 @@ public class NeuralNetwork implements Serializable {
 			if (i == w.size() - 1) {
 				
 				delta.set(i, multiply(sub(yHat, y), map(z.get(i), NeuralNetwork::activationPrime)));
-				djdw.set(i, add(dot(transpose(a.get(i - 1)), delta.get(i)), multiply(OVERFITTING_PENALTY, w.get(i))));
+				djdw.set(i, add(dot(transpose(a.get(i - 1)), delta.get(i)), multiply(overfittingPenalty, w.get(i))));
 				
 			} else if (i != 0) {
 				
 				delta.set(i, multiply(dot(delta.get(i + 1), transpose(w.get(i + 1))), map(z.get(i), NeuralNetwork::activationPrime)));
-				djdw.set(i, add(dot(transpose(a.get(i - 1)), delta.get(i)), multiply(OVERFITTING_PENALTY, w.get(i))));
+				djdw.set(i, add(dot(transpose(a.get(i - 1)), delta.get(i)), multiply(overfittingPenalty, w.get(i))));
 				
 			} else {
 				
 				delta.set(i, multiply(dot(delta.get(i + 1), transpose(w.get(i + 1))), map(z.get(i), NeuralNetwork::activationPrime)));
-				djdw.set(i, add(dot(transpose(x), delta.get(i)), multiply(OVERFITTING_PENALTY, w.get(i))));
+				djdw.set(i, add(dot(transpose(x), delta.get(i)), multiply(overfittingPenalty, w.get(i))));
 				
 			}
 			
