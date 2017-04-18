@@ -55,58 +55,58 @@ public class Test {
 	static long[] global = new long[2];
 	static long[] local = new long[2];
 	
-	static {
-
-		
-		CL.setExceptionsEnabled(true);
-		
-		final int platformIndex = 0;
-        final long deviceType = CL_DEVICE_TYPE_GPU;
-        final int deviceIndex = 0;
-
-        // Enable exceptions and subsequently omit error checks in this sample
-        CL.setExceptionsEnabled(true);
-
-        // Obtain the number of platforms
-        int numPlatformsArray[] = new int[1];
-        clGetPlatformIDs(0, null, numPlatformsArray);
-        int numPlatforms = numPlatformsArray[0];
-
-        // Obtain a platform ID
-        cl_platform_id platforms[] = new cl_platform_id[numPlatforms];
-        clGetPlatformIDs(platforms.length, platforms, null);
-        cl_platform_id platform = platforms[platformIndex];
-
-        // Initialize the context properties
-        cl_context_properties contextProperties = new cl_context_properties();
-        contextProperties.addProperty(CL_CONTEXT_PLATFORM, platform);
-        
-        // Obtain the number of devices for the platform
-        int numDevicesArray[] = new int[1];
-        clGetDeviceIDs(platform, deviceType, 0, null, numDevicesArray);
-        int numDevices = numDevicesArray[0];
-        
-        // Obtain a device ID 
-        cl_device_id devices[] = new cl_device_id[numDevices];
-        clGetDeviceIDs(platform, deviceType, numDevices, devices, null);
-        cl_device_id device = devices[deviceIndex];
-
-        // Create a context for the selected device
-        context = clCreateContext(
-            contextProperties, 1, new cl_device_id[]{device}, 
-            null, null, null);
-
-		
-	
-        // Create a command-queue for the selected device
-        commandQueue = 
-            clCreateCommandQueue(context, device, 0, null);
-	}
+//	static {
+//
+//		
+//		CL.setExceptionsEnabled(true);
+//		
+//		final int platformIndex = 0;
+//        final long deviceType = CL_DEVICE_TYPE_GPU;
+//        final int deviceIndex = 0;
+//
+//        // Enable exceptions and subsequently omit error checks in this sample
+//        CL.setExceptionsEnabled(true);
+//
+//        // Obtain the number of platforms
+//        int numPlatformsArray[] = new int[1];
+//        clGetPlatformIDs(0, null, numPlatformsArray);
+//        int numPlatforms = numPlatformsArray[0];
+//
+//        // Obtain a platform ID
+//        cl_platform_id platforms[] = new cl_platform_id[numPlatforms];
+//        clGetPlatformIDs(platforms.length, platforms, null);
+//        cl_platform_id platform = platforms[platformIndex];
+//
+//        // Initialize the context properties
+//        cl_context_properties contextProperties = new cl_context_properties();
+//        contextProperties.addProperty(CL_CONTEXT_PLATFORM, platform);
+//        
+//        // Obtain the number of devices for the platform
+//        int numDevicesArray[] = new int[1];
+//        clGetDeviceIDs(platform, deviceType, 0, null, numDevicesArray);
+//        int numDevices = numDevicesArray[0];
+//        
+//        // Obtain a device ID 
+//        cl_device_id devices[] = new cl_device_id[numDevices];
+//        clGetDeviceIDs(platform, deviceType, numDevices, devices, null);
+//        cl_device_id device = devices[deviceIndex];
+//
+//        // Create a context for the selected device
+//        context = clCreateContext(
+//            contextProperties, 1, new cl_device_id[]{device}, 
+//            null, null, null);
+//
+//		
+//	
+//        // Create a command-queue for the selected device
+//        commandQueue = 
+//            clCreateCommandQueue(context, device, 0, null);
+//	}
 	
 	public static void main(String[] args){
 		
-		Matrix a = new Matrix(3, 3);
-		Matrix b = new Matrix(3, 3);
+		Matrix a = new Matrix(10000, 100);
+		Matrix b = new Matrix(100, 10000);
 		
 		a.set(0, 0, 2);
 		a.set(1, 1, 9);
@@ -117,10 +117,8 @@ public class Test {
 		b.set(2, 2, -5);
 		
 		Matrix c0 = Matrix.dot(a, b);
-		Matrix c1 = dot(a,b);
 		
 		System.out.println(c0.toString());
-		System.out.println(c1.toString());
 	}
 	
 	public static Matrix dot(Matrix a, Matrix b){

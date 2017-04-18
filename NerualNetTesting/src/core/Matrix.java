@@ -46,6 +46,7 @@ import org.jocl.cl_mem;
 import org.jocl.cl_platform_id;
 import org.jocl.cl_program;
 
+@SuppressWarnings("deprecation")
 public class Matrix implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
@@ -106,7 +107,6 @@ public class Matrix implements Serializable {
 		
 		// Create a command-queue for the selected device
 		commandQueue = clCreateCommandQueue(context, device, 0, null);
-		
 		String code = loadCLCode("kernel/mat_mul.cl");
 		
 		program = clCreateProgramWithSource(context, 1, new String[] { code }, null, null);
@@ -121,13 +121,12 @@ public class Matrix implements Serializable {
 		
 	}
 	
-	public Matrix(int rows, int columns, float[] data){
+	public Matrix(int rows, int columns, float[] data) {
 		
 		this.data = data;
 		
 		this.rows = rows;
 		this.columns = columns;
-		
 		
 	}
 	
@@ -138,12 +137,9 @@ public class Matrix implements Serializable {
 		this.rows = rows;
 		this.columns = columns;
 		
-		for (int i = 0; i < data.length; i++)
-		{
-			this.data[i] = (float)data[i];
+		for (int i = 0; i < data.length; i++) {
+			this.data[i] = (float) data[i];
 		}
-		
-		
 		
 	}
 	
@@ -151,7 +147,7 @@ public class Matrix implements Serializable {
 		
 		this(rows, columns);
 		for (int i = 0; i < rows * columns; i++) {
-			data[i] = (float)(double)generator.get();
+			data[i] = (float) generator.get().doubleValue();
 		}
 		
 	}
@@ -178,7 +174,7 @@ public class Matrix implements Serializable {
 	
 	public void set(int row, int column, double c) {
 		
-		data[row * columns + column] = (float)c;
+		data[row * columns + column] = (float) c;
 		
 	}
 	
@@ -194,7 +190,7 @@ public class Matrix implements Serializable {
 		
 		IntStream.range(0, input.rows * input.columns).parallel().forEach(i -> {
 			
-			result.data[i] = (float)(double)function.apply((double)input.data[i]);
+			result.data[i] = (float) function.apply((double) input.data[i]).doubleValue();
 			
 		});
 		
@@ -221,7 +217,7 @@ public class Matrix implements Serializable {
 		float[] A, B, C;
 		
 		C = new float[szC];
-				
+		
 		A = a.data;
 		B = b.data;
 		
@@ -254,7 +250,7 @@ public class Matrix implements Serializable {
 		clEnqueueReadBuffer(commandQueue, cOut, CL_TRUE, 0, Sizeof.cl_float * szC, Pointer.to(C), 0, null, null);
 		
 		Matrix c = new Matrix(mdim, ndim, C);
-				
+		
 		clReleaseMemObject(aIn);
 		clReleaseMemObject(bIn);
 		clReleaseMemObject(cOut);
@@ -294,7 +290,7 @@ public class Matrix implements Serializable {
 		Matrix result = new Matrix(a.columns, a.rows);
 		for (int row = 0; row < a.rows; row++) {
 			for (int column = 0; column < a.columns; column++) {
-				result.data[a.columns * row + row]= a.data[row * a.columns + column];
+				result.data[a.columns * row + row] = a.data[row * a.columns + column];
 			}
 		}
 		
