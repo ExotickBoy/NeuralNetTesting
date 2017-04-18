@@ -1,6 +1,6 @@
 package core;
 
-import static org.jocl.CL.CL_CONTEXT_PLATFORM;
+import static org.jocl.CL.*;
 import static org.jocl.CL.CL_DEVICE_TYPE_ALL;
 import static org.jocl.CL.CL_MEM_COPY_HOST_PTR;
 import static org.jocl.CL.CL_MEM_READ_ONLY;
@@ -71,7 +71,7 @@ public class Matrix implements Serializable {
 		CL.setExceptionsEnabled(true);
 		
 		final int platformIndex = 0;
-		final long deviceType = CL_DEVICE_TYPE_ALL;
+		final long deviceType = CL_DEVICE_TYPE_GPU;
 		final int deviceIndex = 0;
 		
 		// Enable exceptions and subsequently omit error checks in this sample
@@ -118,6 +118,16 @@ public class Matrix implements Serializable {
 	public Matrix(int rows, int columns) {
 		
 		this(rows, columns, new double[rows * columns]);
+		
+	}
+	
+	public Matrix(int rows, int columns, float[] data){
+		
+		this.data = data;
+		
+		this.rows = rows;
+		this.columns = columns;
+		
 		
 	}
 	
@@ -210,12 +220,8 @@ public class Matrix implements Serializable {
 		
 		float[] A, B, C;
 		
-		A = new float[szA];
-		B = new float[szB];
 		C = new float[szC];
-		
-		int i = 0;
-		
+				
 		A = a.data;
 		B = b.data;
 		
@@ -247,16 +253,8 @@ public class Matrix implements Serializable {
 		clEnqueueNDRangeKernel(commandQueue, kernel, 2, null, global, null, 0, null, null);
 		clEnqueueReadBuffer(commandQueue, cOut, CL_TRUE, 0, Sizeof.cl_float * szC, Pointer.to(C), 0, null, null);
 		
-		Matrix c = new Matrix(mdim, ndim);
-		
-		i = 0;
-		
-		for (int row = 0; row < c.getRows(); row++) {
-			for (int col = 0; col < c.getColumns(); col++) {
-				c.set(row, col, C[i++]);
-			}
-		}
-		
+		Matrix c = new Matrix(mdim, ndim, C);
+				
 		clReleaseMemObject(aIn);
 		clReleaseMemObject(bIn);
 		clReleaseMemObject(cOut);
