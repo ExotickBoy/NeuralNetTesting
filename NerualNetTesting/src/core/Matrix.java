@@ -1,6 +1,6 @@
 package core;
 
-import static org.jocl.CL.CL_CONTEXT_PLATFORM;
+import static org.jocl.CL.*;
 import static org.jocl.CL.CL_DEVICE_TYPE_GPU;
 import static org.jocl.CL.CL_MEM_COPY_HOST_PTR;
 import static org.jocl.CL.CL_MEM_READ_ONLY;
@@ -70,7 +70,7 @@ public class Matrix implements Serializable {
 		CL.setExceptionsEnabled(true);
 		
 		final int platformIndex = 0;
-		final long deviceType = CL_DEVICE_TYPE_GPU;
+		final long deviceType = CL_DEVICE_TYPE_ALL;
 		final int deviceIndex = 0;
 		
 		// Enable exceptions and subsequently omit error checks in this sample
