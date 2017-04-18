@@ -105,118 +105,26 @@ public class Test {
 	
 	public static void main(String[] args){
 		
-		Matrix a = new Matrix(3, 3);
-		Matrix b = new Matrix(3, 3);
+		Matrix a = new Matrix(3, 4, new float[]{
+				1, 1, 1, 1,
+				1, 1, 1, 1,
+				1, 1, 1, 1
+		});
+		Matrix b = new Matrix(4, 2, new float[]{
+				1, 1,
+				1, 1,
+				1, 1,
+				1, 1
+		});
 		
-		a.set(0, 0, 2);
-		a.set(1, 1, 9);
-		a.set(2, 2, 1);
-		
-		b.set(0, 0, 3);
-		b.set(1, 1, 1);
-		b.set(2, 2, -5);
+
 		
 		Matrix c0 = Matrix.dot(a, b);
-		Matrix c1 = dot(a,b);
 		
 		System.out.println(c0.toString());
-		System.out.println(c1.toString());
+
 	}
 	
-	public static Matrix dot(Matrix a, Matrix b){
-		
-		int mdim, ndim, pdim;
-		
-		mdim = a.getRows();
-		ndim = b.getColumns();
-		pdim = a.getColumns();
-		
-		int szA, szB, szC;
-		
-		szA = ndim * pdim;
-		szB = pdim * mdim;
-		szC = ndim * mdim;
-		
-		float[] A, B, C;
-		
-		A = new float[szA];
-		B = new float[szB];
-		C = new float[szC];
-		
-		int i = 0;
-		
-		for (int row = 0; row < a.getRows(); row++)
-		{
-			for (int col = 0; col < a.getColumns(); col++)
-			{
-				A[i++] = (float)a.get(row, col);
-			}
-		}
-		
-		i = 0;
-		
-		for (int row = 0; row < b.getRows(); row++)
-		{
-			for (int col = 0; col < b.getColumns(); col++)
-			{
-				B[i++] = (float)b.get(row, col);
-			}
-		}
-		
-		Pointer pA = Pointer.to(A);
-		Pointer pB = Pointer.to(B);
-		Pointer pC = Pointer.to(C);
-		
-		cl_mem aIn, bIn, cOut;
-		
-		aIn = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * szA, pA, null);
-		bIn = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * szB, pB, null);
-		cOut = clCreateBuffer(context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * szC, pC, null);
-		
-		clEnqueueWriteBuffer(commandQueue, aIn, CL_TRUE, 0, Sizeof.cl_float * szA, pA, 0, null, null);
-		clEnqueueWriteBuffer(commandQueue, bIn, CL_TRUE, 0, Sizeof.cl_float * szB, pB, 0, null, null);
-		
-		String code = loadCLCode("kernel/mat_mul.cl");
-		
-		program = clCreateProgramWithSource(context, 1, new String[]{code}, null, null);
-		 clBuildProgram(program, 0, null, null, null, null);
-		
-		kernel = clCreateKernel(program, "matmul", null);
-		
-		clSetKernelArg(kernel, 0, Sizeof.cl_int, Pointer.to(new int[]{mdim}));
-		clSetKernelArg(kernel, 1, Sizeof.cl_int, Pointer.to(new int[]{ndim}));
-		clSetKernelArg(kernel, 2, Sizeof.cl_int, Pointer.to(new int[]{pdim}));
-		clSetKernelArg(kernel, 3, Sizeof.cl_mem, Pointer.to(new cl_mem[]{aIn}));
-		clSetKernelArg(kernel, 4, Sizeof.cl_mem, Pointer.to(new cl_mem[]{bIn}));
-		clSetKernelArg(kernel, 5, Sizeof.cl_mem, Pointer.to(new cl_mem[]{cOut}));
-		
-		global[0] = ndim;
-		global[1] = mdim;
-		
-		local[0] = 1;
-		
-		clEnqueueNDRangeKernel(commandQueue, kernel, 2, null, global, null, 0, null, null);
-		clEnqueueReadBuffer(commandQueue, cOut, CL_TRUE, 0, Sizeof.cl_float * szC, Pointer.to(C), 0, null, null);
-		
-		Matrix c = new Matrix(mdim, ndim);
-		
-		i = 0;
-		
-		for (int row = 0; row < c.getRows(); row++)
-		{
-			for (int col = 0; col < c.getColumns(); col++)
-			{
-				c.set(row, col, C[i++]);
-			}
-		}
-		
-		clReleaseMemObject(aIn);
-		clReleaseMemObject(bIn);
-		clReleaseMemObject(cOut);
-
-		return c;
-		
-	}
 	
 	private static String loadCLCode(String fileName) {
 		
