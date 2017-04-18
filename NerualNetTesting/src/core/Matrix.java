@@ -105,7 +105,7 @@ public class Matrix implements Serializable {
 		
 		// Create a command-queue for the selected device
 		commandQueue = clCreateCommandQueue(context, device, 0, null);
-				
+		
 		try {
 			
 			mulKernel = loadKernel(new File("kernel/mat_mul.cl"), "matmul");
@@ -212,6 +212,12 @@ public class Matrix implements Serializable {
 	public double get(int row, int column) {
 		
 		return data[row * columns + column];
+		
+	}
+	
+	public double get(int index) {
+		
+		return data[index];
 		
 	}
 	
