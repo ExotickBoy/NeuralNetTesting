@@ -1,7 +1,7 @@
 package core;
 
-import static org.jocl.CL.*;
-import static org.jocl.CL.CL_DEVICE_TYPE_ALL;
+import static org.jocl.CL.CL_CONTEXT_PLATFORM;
+import static org.jocl.CL.CL_DEVICE_TYPE_GPU;
 import static org.jocl.CL.CL_MEM_COPY_HOST_PTR;
 import static org.jocl.CL.CL_MEM_READ_ONLY;
 import static org.jocl.CL.CL_MEM_WRITE_ONLY;
@@ -21,18 +21,16 @@ import static org.jocl.CL.clReleaseMemObject;
 import static org.jocl.CL.clSetKernelArg;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.Arrays;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
-
-import javax.lang.model.type.ArrayType;
 
 import org.jocl.CL;
 import org.jocl.Pointer;
@@ -56,7 +54,6 @@ public class Matrix implements Serializable {
 	private static cl_context context;
 	private static cl_command_queue commandQueue;
 	
-
 	private static cl_kernel mulKernel;
 	private static cl_kernel sigKernel;
 	
@@ -108,23 +105,39 @@ public class Matrix implements Serializable {
 		
 		// Create a command-queue for the selected device
 		commandQueue = clCreateCommandQueue(context, device, 0, null);
-
-		cl_program dotProgram;
-		cl_program sigProgram;
-
-		String code = loadCLCode("kernel/mat_mul.cl");
+				
+		try {
+			
+			mulKernel = loadKernel(new File("kernel/mat_mul.cl"), "matmul");
+			sigKernel = loadKernel(new File("kernel/mat_sig.cl"), "matsig");
+			
+		} catch (IOException e) {
+			
+			e.printStackTrace();
+			System.exit(1);
+			
+		}
 		
-		dotProgram = clCreateProgramWithSource(context, 1, new String[] { code }, null, null);
-		clBuildProgram(dotProgram, 0, null, null, null, null);
+	}
+	
+	public static cl_kernel loadKernel(File file, String kernelName) throws IOException {
 		
-		mulKernel = clCreateKernel(dotProgram, "matmul", null);
+		BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+		StringBuilder sb = new StringBuilder();
+		String line = null;
+		while ((line = br.readLine()) != null) {
+			sb.append(line).append("\n");
+		}
+		br.close();
+		String code = sb.toString();
 		
-		code = loadCLCode("kernel/mat_sig.cl");
+		cl_program program = clCreateProgramWithSource(context, 1, new String[] { code }, null, null);
+		clBuildProgram(program, 0, null, null, null, null);
 		
-		sigProgram = clCreateProgramWithSource(context, 1, new String[] { code }, null, null);
-		clBuildProgram(sigProgram, 0, null, null, null, null);
+		cl_kernel kernel = clCreateKernel(program, kernelName, null);
 		
-		sigKernel = clCreateKernel(sigProgram, "matsig", null);
+		return kernel;
+		
 	}
 	
 	public Matrix(int rows, int columns) {
@@ -187,6 +200,12 @@ public class Matrix implements Serializable {
 	public void set(int row, int column, double c) {
 		
 		data[row * columns + column] = (float) c;
+		
+	}
+	
+	public void set(int index, double c) {
+		
+		data[index] = (float) c;
 		
 	}
 	
@@ -302,7 +321,7 @@ public class Matrix implements Serializable {
 		Matrix result = new Matrix(a.columns, a.rows);
 		for (int row = 0; row < a.rows; row++) {
 			for (int column = 0; column < a.columns; column++) {
-				result.data[column * a.rows + row]= a.data[row * a.columns + column];
+				result.data[column * a.rows + row] = a.data[row * a.columns + column];
 			}
 		}
 		
@@ -355,7 +374,7 @@ public class Matrix implements Serializable {
 		float[] mIn, mOut;
 		
 		mOut = new float[szA];
-				
+		
 		mIn = a.data;
 		
 		Pointer pIn = Pointer.to(mIn);
@@ -379,7 +398,7 @@ public class Matrix implements Serializable {
 		clEnqueueReadBuffer(commandQueue, memOut, CL_TRUE, 0, Sizeof.cl_float * szA, Pointer.to(mOut), 0, null, null);
 		
 		Matrix out = new Matrix(rows, columns, mOut);
-				
+		
 		clReleaseMemObject(memIn);
 		clReleaseMemObject(memOut);
 		
@@ -402,23 +421,6 @@ public class Matrix implements Serializable {
 		
 		return string.toString();
 		
-	}
-	
-	private static String loadCLCode(String fileName) {
-		
-		try {
-			BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(fileName)));
-			StringBuilder sb = new StringBuilder();
-			String line = null;
-			while ((line = br.readLine()) != null) {
-				sb.append(line).append("\n");
-			}
-			br.close();
-			return sb.toString();
-		} catch (IOException e) {
-			e.printStackTrace();
-			return null;
-		}
 	}
 	
 }
