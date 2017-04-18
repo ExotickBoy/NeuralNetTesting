@@ -125,12 +125,12 @@ public class Train {
 		
 		if (isStochastic) {
 			
-			trainer = new StochasticTraining(xTraining, yTraining, network, new SimpleGradientDescent(learningRate), random);
+			trainer = new StochasticTraining(xTraining, yTraining, network, new SimpleGradientDescent((float) learningRate), random);
 			System.out.println("Using Stochastic Training");
 			
 		} else {
 			
-			trainer = new BatchTraining(xTraining, yTraining, network, new SimpleGradientDescent(learningRate));
+			trainer = new BatchTraining(xTraining, yTraining, network, new SimpleGradientDescent((float) learningRate));
 			System.out.println("Using Batch Training");
 			
 		}

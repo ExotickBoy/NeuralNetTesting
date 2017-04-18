@@ -263,12 +263,12 @@ public class Matrix implements Serializable {
 		
 	}
 	
-	public static Matrix multiply(double a, Matrix b) {
+	public static Matrix multiply(float a, Matrix b) {
 		
 		Matrix result = new Matrix(b.rows, b.columns);
 		
 		IntStream.range(0, result.rows * result.columns).parallel().forEach(i -> {
-			result.data[i] = (float)a * b.data[i];
+			result.data[i] = a * b.data[i];
 		});
 		
 		return result;

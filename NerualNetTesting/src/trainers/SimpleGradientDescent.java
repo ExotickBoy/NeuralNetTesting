@@ -11,9 +11,9 @@ import core.NeuralNetwork;
 
 public class SimpleGradientDescent extends DescentMethod {
 	
-	private double learningRate;
+	private float learningRate;
 	
-	public SimpleGradientDescent(double learningRate) {
+	public SimpleGradientDescent(float learningRate) {
 		
 		this.learningRate = learningRate;
 		
