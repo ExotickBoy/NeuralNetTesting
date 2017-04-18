@@ -290,7 +290,7 @@ public class Matrix implements Serializable {
 		Matrix result = new Matrix(a.columns, a.rows);
 		for (int row = 0; row < a.rows; row++) {
 			for (int column = 0; column < a.columns; column++) {
-				result.data[a.columns * row + row] = a.data[row * a.columns + column];
+				result.data[column * a.rows + row]= a.data[row * a.columns + column];
 			}
 		}
 		
