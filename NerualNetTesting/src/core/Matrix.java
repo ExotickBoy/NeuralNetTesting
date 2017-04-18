@@ -55,8 +55,9 @@ public class Matrix implements Serializable {
 	private static cl_context context;
 	private static cl_command_queue commandQueue;
 	
-	private static cl_program program;
-	private static cl_kernel kernel;
+
+	private static cl_kernel mulKernel;
+	private static cl_kernel sigKernel;
 	
 	private static long[] global = new long[2];
 	private static long[] local = new long[2];
@@ -107,12 +108,22 @@ public class Matrix implements Serializable {
 		// Create a command-queue for the selected device
 		commandQueue = clCreateCommandQueue(context, device, 0, null);
 		
+		cl_program dotProgram;
+		cl_program sigProgram;
+		
 		String code = loadCLCode("kernel/mat_mul.cl");
 		
-		program = clCreateProgramWithSource(context, 1, new String[] { code }, null, null);
-		clBuildProgram(program, 0, null, null, null, null);
+		dotProgram = clCreateProgramWithSource(context, 1, new String[] { code }, null, null);
+		clBuildProgram(dotProgram, 0, null, null, null, null);
 		
-		kernel = clCreateKernel(program, "matmul", null);
+		mulKernel = clCreateKernel(dotProgram, "matmul", null);
+		
+		code = loadCLCode("kernel/mat_sig.cl");
+		
+		sigProgram = clCreateProgramWithSource(context, 1, new String[] { code }, null, null);
+		clBuildProgram(sigProgram, 0, null, null, null, null);
+		
+		sigKernel = clCreateKernel(sigProgram, "matsig", null);
 	}
 	
 	public Matrix(int rows, int columns) {
@@ -238,19 +249,19 @@ public class Matrix implements Serializable {
 		clEnqueueWriteBuffer(commandQueue, aIn, CL_TRUE, 0, Sizeof.cl_float * szA, pA, 0, null, null);
 		clEnqueueWriteBuffer(commandQueue, bIn, CL_TRUE, 0, Sizeof.cl_float * szB, pB, 0, null, null);
 		
-		clSetKernelArg(kernel, 0, Sizeof.cl_int, Pointer.to(new int[] { mdim }));
-		clSetKernelArg(kernel, 1, Sizeof.cl_int, Pointer.to(new int[] { ndim }));
-		clSetKernelArg(kernel, 2, Sizeof.cl_int, Pointer.to(new int[] { pdim }));
-		clSetKernelArg(kernel, 3, Sizeof.cl_mem, Pointer.to(new cl_mem[] { aIn }));
-		clSetKernelArg(kernel, 4, Sizeof.cl_mem, Pointer.to(new cl_mem[] { bIn }));
-		clSetKernelArg(kernel, 5, Sizeof.cl_mem, Pointer.to(new cl_mem[] { cOut }));
+		clSetKernelArg(mulKernel, 0, Sizeof.cl_int, Pointer.to(new int[] { mdim }));
+		clSetKernelArg(mulKernel, 1, Sizeof.cl_int, Pointer.to(new int[] { ndim }));
+		clSetKernelArg(mulKernel, 2, Sizeof.cl_int, Pointer.to(new int[] { pdim }));
+		clSetKernelArg(mulKernel, 3, Sizeof.cl_mem, Pointer.to(new cl_mem[] { aIn }));
+		clSetKernelArg(mulKernel, 4, Sizeof.cl_mem, Pointer.to(new cl_mem[] { bIn }));
+		clSetKernelArg(mulKernel, 5, Sizeof.cl_mem, Pointer.to(new cl_mem[] { cOut }));
 		
 		global[0] = ndim;
 		global[1] = mdim;
 		
 		local[0] = 1;
 		
-		clEnqueueNDRangeKernel(commandQueue, kernel, 2, null, global, null, 0, null, null);
+		clEnqueueNDRangeKernel(commandQueue, mulKernel, 2, null, global, null, 0, null, null);
 		clEnqueueReadBuffer(commandQueue, cOut, CL_TRUE, 0, Sizeof.cl_float * szC, Pointer.to(C), 0, null, null);
 		
 		Matrix c = new Matrix(mdim, ndim, C);
@@ -336,6 +347,50 @@ public class Matrix implements Serializable {
 		
 	}
 	
+	public static Matrix sigmoid(Matrix a) {
+		
+		int rows, columns;
+		
+		rows = a.getRows();
+		columns = a.getColumns();
+		
+		int szA = rows * columns;
+		
+		float[] mIn, mOut;
+		
+		mOut = new float[szA];
+				
+		mIn = a.data;
+		
+		Pointer pIn = Pointer.to(mIn);
+		Pointer pOut = Pointer.to(mOut);
+		
+		cl_mem memIn, memOut;
+		
+		memIn = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * szA, pIn, null);
+		memOut = clCreateBuffer(context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * szA, pOut, null);
+		
+		clEnqueueWriteBuffer(commandQueue, memIn, CL_TRUE, 0, Sizeof.cl_float * szA, pIn, 0, null, null);
+		
+		clSetKernelArg(sigKernel, 0, Sizeof.cl_mem, Pointer.to(new cl_mem[] { memIn }));
+		clSetKernelArg(sigKernel, 1, Sizeof.cl_mem, Pointer.to(new cl_mem[] { memOut }));
+		
+		global[0] = rows * columns;
+		
+		local[0] = 1;
+		
+		clEnqueueNDRangeKernel(commandQueue, sigKernel, 1, null, global, null, 0, null, null);
+		clEnqueueReadBuffer(commandQueue, memOut, CL_TRUE, 0, Sizeof.cl_float * szA, Pointer.to(mOut), 0, null, null);
+		
+		Matrix out = new Matrix(rows, columns, mOut);
+				
+		clReleaseMemObject(memIn);
+		clReleaseMemObject(memOut);
+		
+		return out;
+		
+	}
+	
 	@Override
 	public String toString() {
 		
@@ -368,7 +423,6 @@ public class Matrix implements Serializable {
 			e.printStackTrace();
 			return null;
 		}
-		
 	}
 	
 }

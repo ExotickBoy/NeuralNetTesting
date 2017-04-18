@@ -75,18 +75,17 @@ public class NeuralNetwork implements Serializable {
 			if (i == 0) {
 				
 				z.add(dot(x, w.get(i)));
-				a.add(map(z.get(z.size() - 1), NeuralNetwork::activation));
+				a.add(Matrix.sigmoid(z.get(z.size() - 1)));
 				
 			} else if (i != w.size() - 1) {
 				
 				z.add(dot(a.get(a.size() - 1), w.get(i)));
-				a.add(map(z.get(z.size() - 1), NeuralNetwork::activation));
+				a.add(Matrix.sigmoid(z.get(z.size() - 1)));
 				
 			} else {
 				
 				z.add(dot(a.get(a.size() - 1), w.get(i)));
-				yHat = map(z.get(z.size() - 1), NeuralNetwork::activation);
-				
+				yHat = Matrix.sigmoid(z.get(z.size() - 1));		
 			}
 			
 		}
