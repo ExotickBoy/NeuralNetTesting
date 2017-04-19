@@ -2,3 +2,4 @@
 *.nwk
 /nets/
 *.log
+*.obj

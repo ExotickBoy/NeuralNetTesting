@@ -1,7 +1,7 @@
 package core;
 
-import static org.jocl.CL.*;
-import static org.jocl.CL.CL_DEVICE_TYPE_GPU;
+import static org.jocl.CL.CL_CONTEXT_PLATFORM;
+import static org.jocl.CL.CL_DEVICE_TYPE_ALL;
 import static org.jocl.CL.CL_MEM_COPY_HOST_PTR;
 import static org.jocl.CL.CL_MEM_READ_ONLY;
 import static org.jocl.CL.CL_MEM_WRITE_ONLY;
@@ -26,8 +26,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
@@ -48,8 +46,6 @@ import org.jocl.cl_program;
 public class Matrix implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
-	
-	private static final NumberFormat FORMATTER = new DecimalFormat("#0.00");
 	
 	private static cl_context context;
 	private static cl_command_queue commandQueue;
@@ -148,6 +144,8 @@ public class Matrix implements Serializable {
 	
 	public Matrix(int rows, int columns, float[] data) {
 		
+		assert data.length == rows * columns;
+		
 		this.data = data;
 		
 		this.rows = rows;
@@ -197,6 +195,12 @@ public class Matrix implements Serializable {
 		
 	}
 	
+	public int getSize() {
+		
+		return data.length;
+		
+	}
+
 	public void set(int row, int column, double c) {
 		
 		data[row * columns + column] = (float) c;
@@ -417,10 +421,9 @@ public class Matrix implements Serializable {
 		
 		StringBuilder string = new StringBuilder();
 		
-		int i = 0;
 		for (int row = 0; row < rows; row++) {
 			for (int column = 0; column < columns; column++) {
-				string.append(FORMATTER.format(data[i++]) + ",\t");
+				string.append(data[row * columns + column]+"\t");
 			}
 			string.append("\n");
 		}

@@ -1,10 +1,10 @@
 package core;
 
+import static core.Matrix.*;
+
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.stream.Collectors;
-
-import static core.Matrix.*;
 
 import static java.lang.Math.*;
 
@@ -14,11 +14,14 @@ public class NumericalGradientChecking {
 	
 	public static void main(String[] args) {
 		
-		Matrix x = new Matrix(5, 2, new float[] { .1f, .9f, .4f, .5f, .6f, .4f, .1f, .3f, .9f, .1f, });
-		Matrix y = new Matrix(5, 1, new float[] { .1f, .4f, .3f, .5f, .9f });
+		// Matrix x = new Matrix(2, 5, new float[] { .1f, .9f, .4f, .5f, .6f, .4f, .1f, .3f, .9f, .1f, });
+		// Matrix y = new Matrix(1, 5, new float[] { .1f, .4f, .3f, .5f, .9f });
+		
+		Matrix x = new Matrix(2, 1, new float[] { 0f, 0f, });
+		Matrix y = new Matrix(1, 1, new float[] { 1f });
 		
 		Random r = new Random();
-		NeuralNetwork network = new NeuralNetwork(2, 1, 5, 5, 0, r);
+		NeuralNetwork network = new NeuralNetwork(2, 1, 5, 1, 0, r);
 		
 		ArrayList<Matrix> ws = network.getW().stream().map(Matrix::new).collect(Collectors.toCollection(ArrayList::new));
 		
@@ -49,10 +52,8 @@ public class NumericalGradientChecking {
 		
 	}
 	
-	private static double norm(Matrix x) {
-		
-		return pow(sum(map(x, p -> p * p)), 0.5);
-		
+	public static double norm(Matrix x) {
+		return sum(map(x, n -> abs(n)));
 	}
 	
 }

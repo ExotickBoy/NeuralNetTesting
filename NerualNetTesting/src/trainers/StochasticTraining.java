@@ -8,7 +8,7 @@ import core.NeuralNetwork;
 
 public class StochasticTraining extends TrainingScheme {
 	
-	private static final int SGD_MINIBATCH_SIZE = 20;
+	private static final int SGD_MINIBATCH_SIZE = 100;
 	
 	private int index;
 	private Random random;
@@ -29,18 +29,18 @@ public class StochasticTraining extends TrainingScheme {
 		// Split x and y into minibatches
 		for (int i = 0; i < numMinibatches; i++) {
 			
-			Matrix batchX = new Matrix(SGD_MINIBATCH_SIZE, xTraining.getColumns());
-			Matrix batchY = new Matrix(SGD_MINIBATCH_SIZE, 10);
+			Matrix batchX = new Matrix(xTraining.getRows(), SGD_MINIBATCH_SIZE);
+			Matrix batchY = new Matrix(10, SGD_MINIBATCH_SIZE);
 			
 			for (int row = 0; row < batchX.getRows(); row++) {
 				for (int col = 0; col < batchX.getColumns(); col++) {
-					batchX.set(row, col, xTraining.get(row + i * SGD_MINIBATCH_SIZE, col));
+					batchX.set(row, col, xTraining.get(row, col + SGD_MINIBATCH_SIZE * i));
 				}
 			}
 			
 			for (int row = 0; row < batchY.getRows(); row++) {
 				for (int col = 0; col < batchY.getColumns(); col++) {
-					batchY.set(row, col, yTraining.get(row + i * SGD_MINIBATCH_SIZE, col));
+					batchY.set(row, col, yTraining.get(row, col + SGD_MINIBATCH_SIZE * i));
 				}
 			}
 			

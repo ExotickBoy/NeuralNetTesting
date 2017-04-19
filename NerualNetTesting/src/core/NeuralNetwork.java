@@ -1,7 +1,6 @@
 
 package core;
 
-import static core.Matrix.add;
 import static core.Matrix.dot;
 import static core.Matrix.map;
 import static core.Matrix.multiply;
@@ -34,10 +33,10 @@ public class NeuralNetwork implements Serializable {
 	
 	private float overfittingPenalty = 0;
 	
-	private ArrayList<Matrix> w = new ArrayList<>(); // -1
-	private transient ArrayList<Matrix> djdw = new ArrayList<>(); // -1
-	private transient ArrayList<Matrix> a = new ArrayList<>(); // -2
-	private transient ArrayList<Matrix> z = new ArrayList<>(); // -2
+	private ArrayList<Matrix> w = new ArrayList<>();
+	private transient ArrayList<Matrix> djdw = new ArrayList<>();
+	private transient ArrayList<Matrix> z = new ArrayList<>();
+	private transient ArrayList<Matrix> x = new ArrayList<>();
 	
 	public NeuralNetwork(int inputLayerSize, int outputLayerSize, int hiddenLayerSize, int numberOfHiddenLayers, float overfittingPenalty, Random r) {
 		
@@ -50,68 +49,56 @@ public class NeuralNetwork implements Serializable {
 		
 		this.overfittingPenalty = overfittingPenalty;
 		
-		w.add(new Matrix(inputLayerSize, hiddenLayerSize, r::nextGaussian));
+		w.add(new Matrix(hiddenLayerSize, inputLayerSize, r::nextGaussian));
 		for (int i = 0; i < numberOfHiddenLayers - 1; i++) {
 			w.add(new Matrix(hiddenLayerSize, hiddenLayerSize, r::nextGaussian));
 		}
-		w.add(new Matrix(hiddenLayerSize, outputLayerSize, r::nextGaussian));
+		w.add(new Matrix(outputLayerSize, hiddenLayerSize, r::nextGaussian));
 		
 		djdw = new ArrayList<>(w.size());
+		x = new ArrayList<>();
 		z = new ArrayList<>();
-		a = new ArrayList<>();
 		
 	}
 	
-	public Matrix forward(Matrix x) {
+	public Matrix forward(Matrix x0) {
 		
-		assert x.getColumns() == inputLayerSize;
+		assert x0.getRows() == inputLayerSize;
 		
+		x.clear();
 		z.clear();
-		a.clear();
+		x.add(x0);
 		
-		Matrix yHat = null;
 		for (int i = 0; i < w.size(); i++) {
 			
-			if (i == 0) {
-				
-				z.add(dot(x, w.get(i)));
-				a.add(Matrix.sigmoid(z.get(z.size() - 1)));
-				
-			} else if (i != w.size() - 1) {
-				
-				z.add(dot(a.get(a.size() - 1), w.get(i)));
-				a.add(Matrix.sigmoid(z.get(z.size() - 1)));
-				
-			} else {
-				
-				z.add(dot(a.get(a.size() - 1), w.get(i)));
-				yHat = Matrix.sigmoid(z.get(z.size() - 1));		
-			}
+			Matrix z_ = dot(w.get(i), x.get(i));
+			x.add(Matrix.sigmoid(z_));
+			z.add(z_);
 			
 		}
 		
-		return yHat;
+		return x.get(x.size() - 1);
 		
 	}
 	
-	public double getCost(Matrix x, Matrix y) {
-		return getCost(x, y, forward(x));
+	public double getCost(Matrix x0, Matrix y) {
+		return getCost(x0, y, forward(x0));
 	}
 	
 	public double getCost(Matrix x, Matrix y, Matrix yHat) {
 		
-		return 0.5 * sum(map(sub(y, yHat), z -> z * z)) / x.getRows() + overfittingPenalty * w.stream().mapToDouble(w -> sum(map(w, z -> z * z))).sum() / 2;
+		return 0.5 * sum(map(sub(y, yHat), z -> z * z)) / x.getColumns() + overfittingPenalty * w.stream().mapToDouble(w -> sum(map(w, z -> z * z))).sum() / 2;
 		
 	}
 	
-	public ArrayList<Matrix> getCostPrime(Matrix x, Matrix y) {
-		return getCostPrime(x, y, forward(x));
+	public ArrayList<Matrix> getCostPrime(Matrix x0, Matrix y) {
+		return getCostPrime(x0, y, forward(x0));
 	}
 	
-	public ArrayList<Matrix> getCostPrime(Matrix x, Matrix y, Matrix yHat) {
+	public ArrayList<Matrix> getCostPrime(Matrix x0, Matrix y, Matrix yHat) {
 		
-		assert x.getColumns() == inputLayerSize && y.getColumns() == outputLayerSize;
-		
+		assert x0.getRows() == inputLayerSize && y.getRows() == outputLayerSize;
+				
 		ArrayList<Matrix> delta = new ArrayList<>();
 		djdw.clear();
 		for (int i = 0; i < w.size(); i++) {
@@ -124,19 +111,13 @@ public class NeuralNetwork implements Serializable {
 			if (i == w.size() - 1) {
 				
 				delta.set(i, multiply(sub(yHat, y), map(z.get(i), NeuralNetwork::activationPrime)));
-				djdw.set(i, add(dot(transpose(a.get(i - 1)), delta.get(i)), multiply(overfittingPenalty, w.get(i))));
-				
-			} else if (i != 0) {
-				
-				delta.set(i, multiply(dot(delta.get(i + 1), transpose(w.get(i + 1))), map(z.get(i), NeuralNetwork::activationPrime)));
-				djdw.set(i, add(dot(transpose(a.get(i - 1)), delta.get(i)), multiply(overfittingPenalty, w.get(i))));
 				
 			} else {
 				
-				delta.set(i, multiply(dot(delta.get(i + 1), transpose(w.get(i + 1))), map(z.get(i), NeuralNetwork::activationPrime)));
-				djdw.set(i, add(dot(transpose(x), delta.get(i)), multiply(overfittingPenalty, w.get(i))));
+				delta.set(i, multiply(dot(transpose(w.get(i + 1)), delta.get(i + 1)), map(z.get(i), NeuralNetwork::activationPrime)));
 				
 			}
+			djdw.set(i, dot(delta.get(i), transpose(x.get(i))));
 			
 		}
 		
@@ -188,7 +169,7 @@ public class NeuralNetwork implements Serializable {
 			ObjectInputStream ois = new ObjectInputStream(new GZIPInputStream(new FileInputStream(file)));
 			
 			NeuralNetwork network = (NeuralNetwork) ois.readObject();
-			network.a = new ArrayList<>();
+			network.x = new ArrayList<>();
 			network.z = new ArrayList<>();
 			network.djdw = new ArrayList<>();
 			
@@ -201,6 +182,18 @@ public class NeuralNetwork implements Serializable {
 			return null;
 			
 		}
+		
+	}
+	
+	public int getInputLayerSize() {
+		
+		return inputLayerSize;
+		
+	}
+	
+	public int getOutputLayerSize() {
+		
+		return outputLayerSize;
 		
 	}
 	

@@ -30,6 +30,8 @@ public abstract class TrainingScheme {
 	
 	public TrainingScheme(Matrix xTraining, Matrix yTraining, NeuralNetwork network, DescentMethod descentMethod) {
 		
+		assert xTraining.getRows() == network.getInputLayerSize() && yTraining.getRows() == network.getOutputLayerSize();
+		
 		this.allXTraining = xTraining;
 		this.allYTraining = yTraining;
 		
@@ -143,6 +145,8 @@ public abstract class TrainingScheme {
 	}
 	
 	public void setTestingData(Matrix xTesting, Matrix yTesting) {
+		
+		assert xTesting.getRows() == network.getInputLayerSize() && yTesting.getRows() == network.getOutputLayerSize();
 		
 		useTesting = true;
 		this.allXTesting = xTesting;

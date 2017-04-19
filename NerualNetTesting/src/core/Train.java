@@ -30,7 +30,7 @@ public class Train {
 	private static final int TEST_SAMPLES = 10000;
 	
 	private static final int HIDDEN_LAYER_SIZE = 1000;
-	private static final int HIDDEN_LAYER_AMOUNT = 15;
+	private static final int HIDDEN_LAYER_AMOUNT = 5;
 	
 	private static boolean isStochastic;
 	private static boolean useTesting;
@@ -117,7 +117,7 @@ public class Train {
 		
 		if (network == null) {
 			
-			network = new NeuralNetwork(xTraining.getColumns(), yTraining.getColumns(), HIDDEN_LAYER_SIZE, HIDDEN_LAYER_AMOUNT, 0, random);
+			network = new NeuralNetwork(xTraining.getRows(), yTraining.getRows(), HIDDEN_LAYER_SIZE, HIDDEN_LAYER_AMOUNT, 0, random);
 			
 		}
 		
@@ -167,18 +167,23 @@ public class Train {
 			for (int i = 0; i < 16; i++) {
 				in.read(); // metadata
 			}
-			double[] data = new double[samples * SAMPLE_HEIGHT * SAMPLE_WIDTH];
+			Matrix data = new Matrix(SAMPLE_HEIGHT * SAMPLE_WIDTH, samples);
+			
 			byte[] read = new byte[SAMPLE_HEIGHT * SAMPLE_WIDTH * samples];
 			in.read(read, 0, SAMPLE_HEIGHT * SAMPLE_WIDTH * samples);
-			for (int sample = 0; sample < samples * SAMPLE_HEIGHT * SAMPLE_WIDTH; sample++) {
-				
-				data[sample] = (read[sample] & 0xff) / 255d;
+			
+			for (int sample = 0; sample < samples; sample++) {
+				for (int pixel = 0; pixel < SAMPLE_HEIGHT * SAMPLE_WIDTH; pixel++) {
+					
+					data.set(pixel, sample, (read[sample] & 0xff) / 255d);
+					
+				}
 				
 			}
 			
 			in.close();
 			
-			return new Matrix(samples, SAMPLE_HEIGHT * SAMPLE_WIDTH, data);
+			return data;
 			
 		} catch (IOException e) {
 			
@@ -197,16 +202,16 @@ public class Train {
 			for (int i = 0; i < 16; i++) {
 				in.read();
 			} // metadata
-			double[] data = new double[samples * 10];
+			Matrix data = new Matrix(10, samples);
 			byte[] read = new byte[samples];
 			in.read(read);
 			for (int sample = 0; sample < samples; sample++) {
-				data[sample * 10 + read[sample] & 0xff] = 1;
+				data.set(read[sample] & 0xff, sample, 1);
 			}
 			
 			in.close();
 			
-			return new Matrix(samples, 10, data);
+			return data;
 			
 		} catch (IOException e) {
 			e.printStackTrace();

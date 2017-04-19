@@ -88,6 +88,7 @@ public class NetworkTest {
 			}
 			
 			Matrix result = network.forward(img);
+			System.out.println(result);
 			HashMap<Integer, Double> map = new HashMap<>();
 			for (int j = 0; j < 10; j++) {
 				map.put(j, result.get(0, j));
