@@ -125,14 +125,17 @@ public class NeuralNetwork implements Serializable {
 		
 	}
 	
-	private static double activation(double x) {
+	public static double activation(double x) {
+		
 		return 1 / (1 + pow(E, -x));
-		// return tanh(x);
+		
 	}
 	
-	private static double activationPrime(double x) {
-		return activation(x) * (1 - activation(x));
-		// return pow(cosh(x), -2);
+	public static double activationPrime(double x) {
+		
+		double a = activation(x);
+		return a * (1 - a);
+		
 	}
 	
 	public ArrayList<Matrix> getW() {

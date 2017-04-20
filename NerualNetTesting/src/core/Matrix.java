@@ -116,7 +116,7 @@ public class Matrix implements Serializable {
 		
 	}
 	
-	public static cl_kernel loadKernel(File file, String kernelName) throws IOException {
+	private static cl_kernel loadKernel(File file, String kernelName) throws IOException {
 		
 		BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
 		StringBuilder sb = new StringBuilder();
@@ -200,7 +200,7 @@ public class Matrix implements Serializable {
 		return data.length;
 		
 	}
-
+	
 	public void set(int row, int column, double c) {
 		
 		data[row * columns + column] = (float) c;
@@ -423,7 +423,7 @@ public class Matrix implements Serializable {
 		
 		for (int row = 0; row < rows; row++) {
 			for (int column = 0; column < columns; column++) {
-				string.append(data[row * columns + column]+"\t");
+				string.append(data[row * columns + column] + "\t");
 			}
 			string.append("\n");
 		}
