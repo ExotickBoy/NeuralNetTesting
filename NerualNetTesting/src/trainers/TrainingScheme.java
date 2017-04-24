@@ -178,7 +178,7 @@ public abstract class TrainingScheme {
 		
 	}
 	
-	public void setMinCost(int minCost) {
+	public void setMinCost(double minCost) {
 		
 		if (defaultLimit) {
 			useMinCost = true;

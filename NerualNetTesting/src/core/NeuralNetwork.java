@@ -19,6 +19,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -37,6 +38,16 @@ public class NeuralNetwork implements Serializable {
 	private transient ArrayList<Matrix> djdw = new ArrayList<>();
 	private transient ArrayList<Matrix> z = new ArrayList<>();
 	private transient ArrayList<Matrix> x = new ArrayList<>();
+	
+	public NeuralNetwork(NeuralNetwork network) {
+		
+		this.inputLayerSize = network.inputLayerSize;
+		this.outputLayerSize = network.outputLayerSize;
+		this.overfittingPenalty = network.overfittingPenalty;
+		
+		this.w = network.w.stream().map(Matrix::new).collect(Collectors.toCollection(ArrayList::new));
+		
+	}
 	
 	public NeuralNetwork(int inputLayerSize, int outputLayerSize, int hiddenLayerSize, int numberOfHiddenLayers, float overfittingPenalty, Random r) {
 		
@@ -98,7 +109,7 @@ public class NeuralNetwork implements Serializable {
 	public ArrayList<Matrix> getCostPrime(Matrix x0, Matrix y, Matrix yHat) {
 		
 		assert x0.getRows() == inputLayerSize && y.getRows() == outputLayerSize;
-				
+		
 		ArrayList<Matrix> delta = new ArrayList<>();
 		djdw.clear();
 		for (int i = 0; i < w.size(); i++) {
