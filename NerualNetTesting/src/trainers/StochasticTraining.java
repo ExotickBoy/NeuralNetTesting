@@ -16,7 +16,7 @@ public class StochasticTraining extends TrainingScheme {
 	private ArrayList<Matrix> miniBatchesY;
 	private ArrayList<Matrix> miniBatchesX;
 	
-	public StochasticTraining(Matrix xTraining, Matrix yTraining, NeuralNetwork network, DescentMethod descentMethod, Random random) {
+	public StochasticTraining(Matrix xTraining, Matrix yTraining, NeuralNetwork network, OptimisationMethod descentMethod, Random random) {
 		
 		super(xTraining, yTraining, network, descentMethod);
 		this.random = random;

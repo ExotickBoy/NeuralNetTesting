@@ -326,6 +326,44 @@ public class Matrix implements Serializable {
 		
 	}
 	
+	public static Matrix divide(Matrix a, Matrix b) {
+		
+		assert a.columns == b.columns && a.rows == b.rows;
+		
+		Matrix result = new Matrix(a.rows, b.columns);
+		
+		IntStream.range(0, result.rows * result.columns).parallel().forEach(i -> {
+			result.data[i] = a.data[i] / b.data[i];
+		});
+		
+		return result;
+		
+	}
+	
+	public static Matrix divide(float a, Matrix b) {
+		
+		Matrix result = new Matrix(b.rows, b.columns);
+		
+		IntStream.range(0, result.rows * result.columns).parallel().forEach(i -> {
+			result.data[i] = a / b.data[i];
+		});
+		
+		return result;
+		
+	}
+	
+	public static Matrix divide(Matrix a, float b) {
+		
+		Matrix result = new Matrix(a.rows, a.columns);
+		
+		IntStream.range(0, result.rows * result.columns).parallel().forEach(i -> {
+			result.data[i] = a.data[i] / b;
+		});
+		
+		return result;
+		
+	}
+	
 	public static Matrix transpose(Matrix a) {
 		
 		Matrix result = new Matrix(a.columns, a.rows);

@@ -24,11 +24,11 @@ public abstract class TrainingScheme {
 	private Matrix allYTesting;
 	
 	private NeuralNetwork network;
-	private DescentMethod descentMethod;
+	private OptimisationMethod descentMethod;
 	
 	private CallBack callback;
 	
-	public TrainingScheme(Matrix xTraining, Matrix yTraining, NeuralNetwork network, DescentMethod descentMethod) {
+	public TrainingScheme(Matrix xTraining, Matrix yTraining, NeuralNetwork network, OptimisationMethod descentMethod) {
 		
 		assert xTraining.getRows() == network.getInputLayerSize() && yTraining.getRows() == network.getOutputLayerSize();
 		
@@ -73,7 +73,7 @@ public abstract class TrainingScheme {
 			
 			ArrayList<Matrix> djdw = network.getCostPrime(xTraining, yTraining, yHat);
 			
-			descentMethod.descend(network, djdw);
+			descentMethod.descend(network, (float) (useTesting ? testingCost : trainingCost), djdw, yHat);
 			
 			if (useTesting) {
 				Matrix xTesting = getXTesting();

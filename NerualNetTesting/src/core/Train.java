@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 import trainers.BatchTraining;
-import trainers.SimpleGradientDescent;
+import trainers.GradientDescent;
 import trainers.StochasticTraining;
 import trainers.TrainingScheme;
 
@@ -125,12 +125,12 @@ public class Train {
 		
 		if (isStochastic) {
 			
-			trainer = new StochasticTraining(xTraining, yTraining, network, new SimpleGradientDescent((float) learningRate), random);
+			trainer = new StochasticTraining(xTraining, yTraining, network, new GradientDescent((float) learningRate), random);
 			System.out.println("Using Stochastic Training");
 			
 		} else {
 			
-			trainer = new BatchTraining(xTraining, yTraining, network, new SimpleGradientDescent((float) learningRate));
+			trainer = new BatchTraining(xTraining, yTraining, network, new GradientDescent((float) learningRate));
 			System.out.println("Using Batch Training");
 			
 		}

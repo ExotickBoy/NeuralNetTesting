@@ -9,19 +9,19 @@ import java.util.stream.IntStream;
 import core.Matrix;
 import core.NeuralNetwork;
 
-public class SimpleGradientDescent extends DescentMethod {
+public class GradientDescent extends OptimisationMethod {
 	
 	private float learningRate;
 	
-	public SimpleGradientDescent(float learningRate) {
+	public GradientDescent(float learningRate) {
 		
 		this.learningRate = learningRate;
 		
 	}
 	
 	@Override
-	public void descend(NeuralNetwork network, ArrayList<Matrix> djdw) {
-		
+	public void descend(NeuralNetwork network, float cost, ArrayList<Matrix> djdw, Matrix yHat) {
+				
 		ArrayList<Matrix> w = network.getW();
 		
 		IntStream.range(0, w.size()).parallel().forEach(i -> {

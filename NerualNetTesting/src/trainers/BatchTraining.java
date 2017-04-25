@@ -5,7 +5,7 @@ import core.NeuralNetwork;
 
 public class BatchTraining extends TrainingScheme {
 	
-	public BatchTraining(Matrix xTraining, Matrix yTraining, NeuralNetwork network, DescentMethod descentMethod) {
+	public BatchTraining(Matrix xTraining, Matrix yTraining, NeuralNetwork network, OptimisationMethod descentMethod) {
 		
 		super(xTraining, yTraining, network, descentMethod);
 		
