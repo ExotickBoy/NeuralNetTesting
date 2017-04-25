@@ -7,6 +7,7 @@ import static core.Matrix.multiply;
 import static core.Matrix.sub;
 import static core.Matrix.sum;
 import static core.Matrix.transpose;
+import static core.Matrix.sigmoidPrime;
 import static java.lang.Math.E;
 import static java.lang.Math.pow;
 
@@ -121,11 +122,11 @@ public class NeuralNetwork implements Serializable {
 			
 			if (i == w.size() - 1) {
 				
-				delta.set(i, multiply(sub(yHat, y), map(z.get(i), NeuralNetwork::activationPrime)));
+				delta.set(i, multiply(sub(yHat, y), sigmoidPrime(x.get(i+1))));
 				
 			} else {
 				
-				delta.set(i, multiply(dot(transpose(w.get(i + 1)), delta.get(i + 1)), map(z.get(i), NeuralNetwork::activationPrime)));
+				delta.set(i, multiply(dot(transpose(w.get(i + 1)), delta.get(i + 1)), sigmoidPrime(x.get(i+1))));
 				
 			}
 			djdw.set(i, dot(delta.get(i), transpose(x.get(i))));

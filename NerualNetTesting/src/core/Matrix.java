@@ -52,6 +52,7 @@ public class Matrix implements Serializable {
 	
 	private static cl_kernel mulKernel;
 	private static cl_kernel sigKernel;
+	private static cl_kernel sigPrimeKernel;
 	
 	private static long[] global = new long[2];
 	private static long[] local = new long[2];
@@ -104,8 +105,9 @@ public class Matrix implements Serializable {
 		
 		try {
 			
-			mulKernel = loadKernel(new File("kernel/mat_mul.cl"), "matmul");
-			sigKernel = loadKernel(new File("kernel/mat_sig.cl"), "matsig");
+			mulKernel = loadKernel(new File("kernel/matmul.cl"), "matmul");
+			sigKernel = loadKernel(new File("kernel/matsig.cl"), "matsig");
+			sigPrimeKernel = loadKernel(new File("kernel/matsigprime.cl"), "matsigprime");
 			
 		} catch (IOException e) {
 			
@@ -452,6 +454,48 @@ public class Matrix implements Serializable {
 		
 		return out;
 		
+	}
+	
+	public static Matrix sigmoidPrime(Matrix a){
+		int rows, columns;
+		
+		rows = a.getRows();
+		columns = a.getColumns();
+		
+		int szA = rows * columns;
+		
+		float[] mIn, mOut;
+		
+		mOut = new float[szA];
+		
+		mIn = a.data;
+		
+		Pointer pIn = Pointer.to(mIn);
+		Pointer pOut = Pointer.to(mOut);
+		
+		cl_mem memIn, memOut;
+		
+		memIn = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * szA, pIn, null);
+		memOut = clCreateBuffer(context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * szA, pOut, null);
+		
+		clEnqueueWriteBuffer(commandQueue, memIn, CL_TRUE, 0, Sizeof.cl_float * szA, pIn, 0, null, null);
+		
+		clSetKernelArg(sigPrimeKernel, 0, Sizeof.cl_mem, Pointer.to(new cl_mem[] { memIn }));
+		clSetKernelArg(sigPrimeKernel, 1, Sizeof.cl_mem, Pointer.to(new cl_mem[] { memOut }));
+		
+		global[0] = rows * columns;
+		
+		local[0] = 1;
+		
+		clEnqueueNDRangeKernel(commandQueue, sigPrimeKernel, 1, null, global, null, 0, null, null);
+		clEnqueueReadBuffer(commandQueue, memOut, CL_TRUE, 0, Sizeof.cl_float * szA, Pointer.to(mOut), 0, null, null);
+		
+		Matrix out = new Matrix(rows, columns, mOut);
+		
+		clReleaseMemObject(memIn);
+		clReleaseMemObject(memOut);
+		
+		return out;
 	}
 	
 	@Override
