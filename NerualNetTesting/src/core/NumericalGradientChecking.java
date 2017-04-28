@@ -8,13 +8,22 @@ import static java.lang.Math.abs;
 
 import java.util.Random;
 
+/**
+ * 
+ * This class implements numerical gradient checking, outputs the difference between the numerically
+ * and analytically computed gradients
+ * 
+ * @author Kacper
+ *
+ */
 public class NumericalGradientChecking {
 	
 	private static final double EPSILON = 1e-4;
 	
 	public static void main(String[] args) {
 		
-		// Matrix x = new Matrix(2, 5, new float[] { .1f, .9f, .4f, .5f, .6f, .4f, .1f, .3f, .9f, .1f, });
+		// Matrix x = new Matrix(2, 5, new float[] { .1f, .9f, .4f, .5f, .6f, .4f, .1f, .3f, .9f,
+		// .1f, });
 		// Matrix y = new Matrix(1, 5, new float[] { .1f, .4f, .3f, .5f, .9f });
 		
 		Matrix x = new Matrix(2, 1, new float[] { 0f, 0f, });
@@ -33,7 +42,6 @@ public class NumericalGradientChecking {
 			perturbedWeights[i] = new Matrix(network.getW()[i]);
 			djdw2[i] = new Matrix(djdw[i]);
 		}
-		
 		
 		network.setW(perturbedWeights);
 		

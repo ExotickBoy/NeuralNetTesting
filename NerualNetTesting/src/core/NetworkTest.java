@@ -20,6 +20,15 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+/**
+ * 
+ * This class contains the application of a neural network trained of the MNIST characters. It
+ * creates a window which allows you to draw on a 28*28 grid and then feeds it to the neural
+ * network, which will then output which digit it thinks it is, which is then displayed to the user
+ * 
+ * @author Kacper
+ *
+ */
 public class NetworkTest {
 	
 	public static void main(String[] args) {
