@@ -7,6 +7,12 @@ import java.util.stream.IntStream;
 
 import core.Matrix;
 
+/**
+ * Simplest linear method for finding the minimum
+ * 
+ * @author Kacper
+ *
+ */
 public class GradientDescent extends OptimisationMethod {
 	
 	private float learningRate;
