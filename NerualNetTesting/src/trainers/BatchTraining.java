@@ -3,6 +3,12 @@ package trainers;
 import core.Matrix;
 import core.NeuralNetwork;
 
+/**
+ * Training method which uses all the available data
+ * 
+ * @author Kacper
+ *
+ */
 public class BatchTraining extends TrainingScheme {
 	
 	public BatchTraining(Matrix xTraining, Matrix yTraining, NeuralNetwork network, OptimisationMethod descentMethod) {

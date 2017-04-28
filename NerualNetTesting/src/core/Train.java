@@ -16,6 +16,13 @@ import trainers.GradientDescent;
 import trainers.StochasticTraining;
 import trainers.TrainingScheme;
 
+/**
+ * 
+ * This class is an implementation of training a neural network on the MNIST data set
+ * 
+ * @author Kacper
+ *
+ */
 public class Train {
 	
 	private static final int SAMPLE_WIDTH = 28;
@@ -93,10 +100,10 @@ public class Train {
 		int trainSamples = (int) (ceil(TRAIN_SAMPLES * sampleProportion));
 		int testSamples = (int) (ceil(TEST_SAMPLES * sampleProportion));
 		
-		Matrix xTraining = getX(new File(TRAIN_IMAGES), trainSamples, SAMPLE_WIDTH, SAMPLE_HEIGHT);
+		Matrix xTraining = getX(new File(TRAIN_IMAGES), trainSamples);
 		Matrix yTraining = getY(new File(TRAIN_LABELS), trainSamples);
 		
-		Matrix xTesting = getX(new File(TEST_IMAGES), testSamples, SAMPLE_WIDTH, SAMPLE_HEIGHT);
+		Matrix xTesting = getX(new File(TEST_IMAGES), testSamples);
 		Matrix yTesting = getY(new File(TEST_LABELS), testSamples);
 		
 		Random random = new Random();
@@ -161,6 +168,11 @@ public class Train {
 		
 	}
 	
+	/**
+	 * 
+	 * This is called from inside of TrainingScheme for every iteration
+	 * 
+	 */
 	public static void callback(NeuralNetwork network, int iteration, double trainingCost, double testingCost, double timeElapsed) {
 		
 		System.out.println(iteration + "," + trainingCost + "," + testingCost + "," + timeElapsed);
@@ -179,15 +191,23 @@ public class Train {
 		
 	}
 	
-	private static Matrix getX(File file, int samples, int width, int height) {
+	/**
+	 * 
+	 * Loads the input MNIST data
+	 * 
+	 * @param file
+	 *            - location of the file
+	 * @param samples
+	 *            - amount of samples that will be read
+	 * @return the matrix where each column is a sample and the rows are the dimensions of the input
+	 */
+	private static Matrix getX(File file, int samples) {
 		
 		try {
 			
 			InputStream in = new FileInputStream(file);
+			in.read(new byte[16]);
 			
-			for (int i = 0; i < 16; i++) {
-				in.read(); // metadata
-			}
 			Matrix data = new Matrix(SAMPLE_HEIGHT * SAMPLE_WIDTH, samples);
 			
 			byte[] read = new byte[SAMPLE_HEIGHT * SAMPLE_WIDTH * samples];
@@ -214,15 +234,24 @@ public class Train {
 		
 	}
 	
+	/**
+	 * 
+	 * Loads the output MNIST data
+	 * 
+	 * @param file
+	 *            - location of the file
+	 * @param samples
+	 *            - amount of samples that will be read
+	 * @return the matrix where each column is a sample and the rows are the dimensions of the
+	 *         output
+	 */
 	private static Matrix getY(File file, int samples) {
 		
 		try {
 			
 			InputStream in = new FileInputStream(file);
+			in.read(new byte[16]);
 			
-			for (int i = 0; i < 16; i++) {
-				in.read();
-			} // metadata
 			Matrix data = new Matrix(10, samples);
 			byte[] read = new byte[samples];
 			in.read(read);

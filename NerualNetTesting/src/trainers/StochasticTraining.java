@@ -6,6 +6,13 @@ import java.util.Random;
 import core.Matrix;
 import core.NeuralNetwork;
 
+/**
+ * 
+ * Training Method which only uses a small portion off all samples in each iteration
+ * 
+ * @author Jamie
+ *
+ */
 public class StochasticTraining extends TrainingScheme {
 	
 	private static final int SGD_MINIBATCH_SIZE = 100;

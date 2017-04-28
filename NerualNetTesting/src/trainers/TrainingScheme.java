@@ -3,6 +3,16 @@ package trainers;
 import core.Matrix;
 import core.NeuralNetwork;
 
+/**
+ * 
+ * This class is the implementation which trains a neural network
+ * 
+ * @see NeuralNetwork
+ * @see OptimisationMethod
+ * 
+ * @author Kacper
+ *
+ */
 public abstract class TrainingScheme {
 	
 	private boolean defaultLimit = true;
@@ -12,7 +22,7 @@ public abstract class TrainingScheme {
 	private boolean useMinCost = true;
 	private int maxIterations = 0;
 	private int maxTime = 0;
-	private double minCost = 0.01;
+	private double minCost = 0.001;
 	
 	private Matrix allXTraining;
 	private Matrix allYTraining;
@@ -39,6 +49,12 @@ public abstract class TrainingScheme {
 		
 	}
 	
+	/**
+	 * 
+	 * Begins the process of training the network, it will train until the finishing conditions are
+	 * met, by default minCost = 0.001
+	 * 
+	 */
 	public final void train() {
 		
 		System.out.println("Starting training");
