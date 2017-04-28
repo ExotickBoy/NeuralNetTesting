@@ -71,7 +71,7 @@ public abstract class TrainingScheme {
 			
 			Matrix[] djdw = network.getCostPrime(xTraining, yTraining, yHat);
 			
-			descentMethod.descend(network, (float) (useTesting ? testingCost : trainingCost), djdw, yHat);
+			descentMethod.descend(network.getW(), djdw);
 			
 			if (useTesting) {
 				Matrix xTesting = getXTesting();

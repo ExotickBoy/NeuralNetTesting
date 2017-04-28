@@ -8,8 +8,6 @@ import static core.Matrix.sigmoidPrime;
 import static core.Matrix.sub;
 import static core.Matrix.sum;
 import static core.Matrix.transpose;
-import static java.lang.Math.E;
-import static java.lang.Math.pow;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -133,16 +131,15 @@ public class NeuralNetwork implements Serializable {
 		
 	}
 	
-	public static double activation(double x) {
+	public int getInputLayerSize() {
 		
-		return 1 / (1 + pow(E, -x));
+		return inputLayerSize;
 		
 	}
 	
-	public static double activationPrime(double x) {
+	public int getOutputLayerSize() {
 		
-		double a = activation(x);
-		return a * (1 - a);
+		return outputLayerSize;
 		
 	}
 	
@@ -163,6 +160,7 @@ public class NeuralNetwork implements Serializable {
 		file.getParentFile().mkdirs();
 		ObjectOutputStream oos = new ObjectOutputStream(new GZIPOutputStream(new FileOutputStream(file)));
 		oos.writeObject(this);
+		oos.writeObject(w);
 		oos.close();
 		
 	}
@@ -171,21 +169,10 @@ public class NeuralNetwork implements Serializable {
 		
 		ObjectInputStream ois = new ObjectInputStream(new GZIPInputStream(new FileInputStream(file)));
 		NeuralNetwork network = (NeuralNetwork) ois.readObject();
+		network.w = (Matrix[]) ois.readObject();
 		ois.close();
 		
 		return network;
-		
-	}
-	
-	public int getInputLayerSize() {
-		
-		return inputLayerSize;
-		
-	}
-	
-	public int getOutputLayerSize() {
-		
-		return outputLayerSize;
 		
 	}
 	

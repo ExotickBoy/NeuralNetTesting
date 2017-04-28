@@ -6,7 +6,6 @@ import static core.Matrix.sub;
 import java.util.stream.IntStream;
 
 import core.Matrix;
-import core.NeuralNetwork;
 
 public class GradientDescent extends OptimisationMethod {
 	
@@ -19,9 +18,7 @@ public class GradientDescent extends OptimisationMethod {
 	}
 	
 	@Override
-	public void descend(NeuralNetwork network, float cost, Matrix[] djdw, Matrix yHat) {
-		
-		Matrix[] w = network.getW();
+	public void descend(Matrix[] w, Matrix[] djdw) {
 		
 		IntStream.range(0, w.length).parallel().forEach(i -> {
 			
