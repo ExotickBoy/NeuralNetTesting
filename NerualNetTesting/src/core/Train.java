@@ -111,13 +111,21 @@ public class Train {
 				
 			}).orElse(null);
 			
-			network = NeuralNetwork.load(file);
+			try {
+				
+				network = NeuralNetwork.load(file);
+				
+			} catch (ClassNotFoundException | IOException e) {
+				
+				e.printStackTrace();
+				
+			}
 			
 		}
 		
 		if (network == null) {
 			
-			network = new NeuralNetwork(xTraining.getRows(), yTraining.getRows(), HIDDEN_LAYER_SIZE, HIDDEN_LAYER_AMOUNT, 0, random);
+			network = new NeuralNetwork(xTraining.getRows(), yTraining.getRows(), HIDDEN_LAYER_SIZE, HIDDEN_LAYER_AMOUNT, random);
 			
 		}
 		
@@ -142,7 +150,14 @@ public class Train {
 		trainer.setCallBack(Train::callback);
 		
 		trainer.train();
-		network.save(new File("nets/network.nwk"));
+		
+		try {
+			
+			network.save(new File("nets/network.nwk"));
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		
 	}
 	
@@ -152,7 +167,13 @@ public class Train {
 		
 		if (saveEachIteration) {
 			
-			network.save(new File("nets/network" + iteration + ".nwk"));
+			try {
+				
+				network.save(new File("nets/network" + iteration + ".nwk"));
+				
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 			
 		}
 		

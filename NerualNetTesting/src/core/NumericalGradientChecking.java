@@ -1,12 +1,12 @@
 package core;
 
-import static core.Matrix.*;
+import static core.Matrix.add;
+import static core.Matrix.map;
+import static core.Matrix.sub;
+import static core.Matrix.sum;
+import static java.lang.Math.abs;
 
-import java.util.ArrayList;
 import java.util.Random;
-import java.util.stream.Collectors;
-
-import static java.lang.Math.*;
 
 public class NumericalGradientChecking {
 	
@@ -21,33 +21,40 @@ public class NumericalGradientChecking {
 		Matrix y = new Matrix(1, 1, new float[] { 1f });
 		
 		Random r = new Random();
-		NeuralNetwork network = new NeuralNetwork(2, 1, 5, 1, 0, r);
+		NeuralNetwork network = new NeuralNetwork(2, 1, 5, 1, r);
 		
-		ArrayList<Matrix> ws = network.getW().stream().map(Matrix::new).collect(Collectors.toCollection(ArrayList::new));
+		Matrix[] djdw = network.getCostPrime(x, y);
+		Matrix[] djdw2 = new Matrix[djdw.length];
 		
-		Matrix yHat = network.forward(x);
-		double defaultCost = network.getCost(x, y, yHat);
+		Matrix[] initialWeights = new Matrix[network.getW().length];
+		Matrix[] perturbedWeights = new Matrix[network.getW().length];
+		for (int i = 0; i < network.getW().length; i++) {
+			initialWeights[i] = new Matrix(network.getW()[i]);
+			perturbedWeights[i] = new Matrix(network.getW()[i]);
+			djdw2[i] = new Matrix(djdw[i]);
+		}
 		
-		ArrayList<Matrix> djdw = network.getCostPrime(x, y, yHat);
-		ArrayList<Matrix> djdw2 = djdw.stream().map(Matrix::new).collect(Collectors.toCollection(ArrayList::new));
 		
-		for (int matrix = 0; matrix < djdw.size(); matrix++) {
-			for (int row = 0; row < djdw.get(matrix).getRows(); row++) {
-				for (int column = 0; column < djdw.get(matrix).getColumns(); column++) {
+		network.setW(perturbedWeights);
+		
+		for (int matrix = 0; matrix < djdw.length; matrix++) {
+			for (int row = 0; row < djdw[matrix].getRows(); row++) {
+				for (int column = 0; column < djdw[matrix].getColumns(); column++) {
 					
-					ArrayList<Matrix> wn = ws.stream().map(Matrix::new).collect(Collectors.toCollection(ArrayList::new));
-					wn.get(matrix).set(row, column, ws.get(matrix).get(row, column) + EPSILON);
-					network.setW(wn);
-					double newCost = network.getCost(x, y);
+					perturbedWeights[matrix].set(row, column, initialWeights[matrix].get(row, column) + EPSILON);
+					double loss2 = network.getCost(x, y);
 					
-					djdw2.get(matrix).set(row, column, (newCost - defaultCost) / EPSILON);
+					perturbedWeights[matrix].set(row, column, initialWeights[matrix].get(row, column) - EPSILON);
+					double loss1 = network.getCost(x, y);
+					
+					djdw2[matrix].set(row, column, (loss2 - loss1) / (2 * EPSILON));
 					
 				}
 			}
 		}
 		
-		for (int matrix = 0; matrix < ws.size(); matrix++) {
-			System.out.println(norm(sub(djdw.get(matrix), djdw2.get(matrix))) / norm(add(djdw.get(matrix), djdw2.get(matrix))));
+		for (int matrix = 0; matrix < initialWeights.length; matrix++) {
+			System.out.println(norm(sub(djdw[matrix], djdw2[matrix])) / norm(add(djdw[matrix], djdw2[matrix])));
 		}
 		
 	}

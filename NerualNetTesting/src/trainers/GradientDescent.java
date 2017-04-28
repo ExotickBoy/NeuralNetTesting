@@ -3,7 +3,6 @@ package trainers;
 import static core.Matrix.multiply;
 import static core.Matrix.sub;
 
-import java.util.ArrayList;
 import java.util.stream.IntStream;
 
 import core.Matrix;
@@ -20,17 +19,15 @@ public class GradientDescent extends OptimisationMethod {
 	}
 	
 	@Override
-	public void descend(NeuralNetwork network, float cost, ArrayList<Matrix> djdw, Matrix yHat) {
-				
-		ArrayList<Matrix> w = network.getW();
+	public void descend(NeuralNetwork network, float cost, Matrix[] djdw, Matrix yHat) {
 		
-		IntStream.range(0, w.size()).parallel().forEach(i -> {
+		Matrix[] w = network.getW();
+		
+		IntStream.range(0, w.length).parallel().forEach(i -> {
 			
-			w.set(i, sub(w.get(i), multiply(learningRate, djdw.get(i))));
+			w[i] = sub(w[i], multiply(learningRate, djdw[i]));
 			
 		});
-		
-		network.setW(w);
 		
 	}
 	

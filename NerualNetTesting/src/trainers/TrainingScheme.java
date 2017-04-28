@@ -1,7 +1,5 @@
 package trainers;
 
-import java.util.ArrayList;
-
 import core.Matrix;
 import core.NeuralNetwork;
 
@@ -71,7 +69,7 @@ public abstract class TrainingScheme {
 			xTraining = getXTraining();
 			yTraining = getYTraining();
 			
-			ArrayList<Matrix> djdw = network.getCostPrime(xTraining, yTraining, yHat);
+			Matrix[] djdw = network.getCostPrime(xTraining, yTraining, yHat);
 			
 			descentMethod.descend(network, (float) (useTesting ? testingCost : trainingCost), djdw, yHat);
 			

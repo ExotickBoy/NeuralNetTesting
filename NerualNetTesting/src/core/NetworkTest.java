@@ -11,6 +11,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.function.Consumer;
 
@@ -23,7 +24,16 @@ public class NetworkTest {
 	
 	public static void main(String[] args) {
 		
-		NeuralNetwork network = NeuralNetwork.load(new File("nets/network.nwk"));
+		NeuralNetwork network = null;
+		try {
+			
+			network = NeuralNetwork.load(new File("nets/network.nwk"));
+			
+		} catch (ClassNotFoundException | IOException e) {
+			
+			e.printStackTrace();
+			System.exit(0);
+		}
 		
 		JFrame frame = new JFrame("Network Test");
 		frame.setContentPane(new MainPane(network));
@@ -55,11 +65,10 @@ public class NetworkTest {
 			
 			bottomPanel = new JPanel();
 			bottomPanel.setLayout(new BorderLayout());
-			result = new JLabel("I think its a ");
+			result = new JLabel(" ");
 			bottomPanel.add(result);
 			
 			resetButton = new JButton("Reset");
-			resetButton.setToolTipText("if you press this button the current image will get completly cucked");
 			resetButton.addActionListener((e) -> {
 				
 				imageEditor.reset();

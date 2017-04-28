@@ -456,7 +456,7 @@ public class Matrix implements Serializable {
 		
 	}
 	
-	public static Matrix sigmoidPrime(Matrix a){
+	public static Matrix sigmoidPrime(Matrix a) {
 		int rows, columns;
 		
 		rows = a.getRows();
