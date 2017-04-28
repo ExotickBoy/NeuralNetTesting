@@ -1,6 +1,6 @@
 package core;
 
-import static org.jocl.CL.CL_CONTEXT_PLATFORM;
+import static org.jocl.CL.*;
 import static org.jocl.CL.CL_DEVICE_TYPE_ALL;
 import static org.jocl.CL.CL_MEM_COPY_HOST_PTR;
 import static org.jocl.CL.CL_MEM_READ_ONLY;
@@ -53,6 +53,10 @@ public class Matrix implements Serializable {
 	private static cl_kernel mulKernel;
 	private static cl_kernel sigKernel;
 	private static cl_kernel sigPrimeKernel;
+	private static cl_kernel dotKernel;
+	private static cl_kernel addKernel;
+	private static cl_kernel subKernel;
+	private static cl_kernel fltMulKernel;
 	
 	private static long[] global = new long[2];
 	private static long[] local = new long[2];
@@ -60,7 +64,11 @@ public class Matrix implements Serializable {
 	private int rows;
 	private int columns;
 	
-	private float[] data;
+	private int size;
+	
+	private boolean isTransposed;
+	
+	private cl_mem mData;
 	
 	static {
 		
@@ -106,8 +114,12 @@ public class Matrix implements Serializable {
 		try {
 			
 			mulKernel = loadKernel(new File("kernel/matmul.cl"), "matmul");
+			dotKernel = loadKernel(new File("kernel/matdot.cl"), "matdot");
 			sigKernel = loadKernel(new File("kernel/matsig.cl"), "matsig");
 			sigPrimeKernel = loadKernel(new File("kernel/matsigprime.cl"), "matsigprime");
+			addKernel = loadKernel(new File("kernel/matadd.cl"), "matadd");
+			fltMulKernel = loadKernel(new File("kernel/fltmul.cl"), "fltmul");
+			subKernel = loadKernel(new File("kernel/matsub.cl"), "matsub");
 			
 		} catch (IOException e) {
 			
@@ -137,10 +149,11 @@ public class Matrix implements Serializable {
 		return kernel;
 		
 	}
+
 	
 	public Matrix(int rows, int columns) {
 		
-		this(rows, columns, new double[rows * columns]);
+		this(rows, columns, new float[rows * columns]);
 		
 	}
 	
@@ -148,13 +161,18 @@ public class Matrix implements Serializable {
 		
 		assert data.length == rows * columns;
 		
-		this.data = data;
-		
 		this.rows = rows;
 		this.columns = columns;
 		
+		this.size = rows * columns;
+		
+		this.mData = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * size, Pointer.to(data), null);
+		
+		isTransposed = false;
+		
 	}
 	
+	@Deprecated
 	public Matrix(int rows, int columns, double[] data) {
 		
 		this.data = new float[data.length];
@@ -162,12 +180,17 @@ public class Matrix implements Serializable {
 		this.rows = rows;
 		this.columns = columns;
 		
+		this.size = rows * columns;
+		
 		for (int i = 0; i < data.length; i++) {
 			this.data[i] = (float) data[i];
 		}
 		
+		isTransposed = false;
+		
 	}
 	
+	@Deprecated
 	public Matrix(int rows, int columns, Supplier<Double> generator) {
 		
 		this(rows, columns);
@@ -181,7 +204,13 @@ public class Matrix implements Serializable {
 		
 		this.rows = a.rows;
 		this.columns = a.columns;
-		this.data = a.data.clone();
+		this.size = rows * columns;
+		
+		clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * size, Pointer.to(a.mData), null);
+		
+	}
+	
+	public float[] getData(){
 		
 	}
 	
@@ -199,34 +228,39 @@ public class Matrix implements Serializable {
 	
 	public int getSize() {
 		
-		return data.length;
+		return size;
 		
 	}
 	
+	@Deprecated
 	public void set(int row, int column, double c) {
 		
 		data[row * columns + column] = (float) c;
 		
 	}
 	
+	@Deprecated
 	public void set(int index, double c) {
 		
 		data[index] = (float) c;
 		
 	}
 	
+	@Deprecated
 	public double get(int row, int column) {
 		
 		return data[row * columns + column];
 		
 	}
 	
+	@Deprecated
 	public double get(int index) {
 		
 		return data[index];
 		
 	}
 	
+	@Deprecated
 	public static Matrix map(Matrix input, Function<Double, Double> function) {
 		
 		Matrix result = new Matrix(input.rows, input.columns);
@@ -241,7 +275,7 @@ public class Matrix implements Serializable {
 		
 	}
 	
-	public static Matrix dot(Matrix a, Matrix b) {
+	public static Matrix dot(Matrix a, Matrix b, Matrix out) {
 		
 		assert a.columns == b.rows;
 		
@@ -251,84 +285,65 @@ public class Matrix implements Serializable {
 		ndim = b.getColumns();
 		pdim = a.getColumns();
 		
-		int szA, szB, szC;
-		
-		szA = mdim * pdim;
-		szB = pdim * ndim;
-		szC = ndim * mdim;
-		
-		float[] A, B, C;
-		
-		C = new float[szC];
-		
-		A = a.data;
-		B = b.data;
-		
-		Pointer pA = Pointer.to(A);
-		Pointer pB = Pointer.to(B);
-		Pointer pC = Pointer.to(C);
-		
-		cl_mem aIn, bIn, cOut;
-		
-		aIn = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * szA, pA, null);
-		bIn = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * szB, pB, null);
-		cOut = clCreateBuffer(context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * szC, pC, null);
-		
-		clEnqueueWriteBuffer(commandQueue, aIn, CL_TRUE, 0, Sizeof.cl_float * szA, pA, 0, null, null);
-		clEnqueueWriteBuffer(commandQueue, bIn, CL_TRUE, 0, Sizeof.cl_float * szB, pB, 0, null, null);
-		
-		clSetKernelArg(mulKernel, 0, Sizeof.cl_int, Pointer.to(new int[] { mdim }));
-		clSetKernelArg(mulKernel, 1, Sizeof.cl_int, Pointer.to(new int[] { ndim }));
-		clSetKernelArg(mulKernel, 2, Sizeof.cl_int, Pointer.to(new int[] { pdim }));
-		clSetKernelArg(mulKernel, 3, Sizeof.cl_mem, Pointer.to(new cl_mem[] { aIn }));
-		clSetKernelArg(mulKernel, 4, Sizeof.cl_mem, Pointer.to(new cl_mem[] { bIn }));
-		clSetKernelArg(mulKernel, 5, Sizeof.cl_mem, Pointer.to(new cl_mem[] { cOut }));
+		clSetKernelArg(dotKernel, 0, Sizeof.cl_int, Pointer.to(new int[] { mdim }));
+		clSetKernelArg(dotKernel, 1, Sizeof.cl_int, Pointer.to(new int[] { ndim }));
+		clSetKernelArg(dotKernel, 2, Sizeof.cl_int, Pointer.to(new int[] { pdim }));
+		clSetKernelArg(dotKernel, 3, Sizeof.cl_mem, Pointer.to(new cl_mem[] { a.mData }));
+		clSetKernelArg(dotKernel, 4, Sizeof.cl_mem, Pointer.to(new cl_mem[] { b.mData }));
+		clSetKernelArg(dotKernel, 5, Sizeof.cl_mem, Pointer.to(new cl_mem[] { out.mData }));
 		
 		global[0] = ndim;
 		global[1] = mdim;
 		
 		local[0] = 1;
 		
-		clEnqueueNDRangeKernel(commandQueue, mulKernel, 2, null, global, null, 0, null, null);
-		clEnqueueReadBuffer(commandQueue, cOut, CL_TRUE, 0, Sizeof.cl_float * szC, Pointer.to(C), 0, null, null);
+		clEnqueueNDRangeKernel(commandQueue, dotKernel, 2, null, global, null, 0, null, null);
 		
-		Matrix c = new Matrix(mdim, ndim, C);
-		
-		clReleaseMemObject(aIn);
-		clReleaseMemObject(bIn);
-		clReleaseMemObject(cOut);
-		
-		return c;
+		return out;
 		
 	}
 	
-	public static Matrix multiply(float a, Matrix b) {
+	@Deprecated
+	public static Matrix multiply(float a, Matrix b, Matrix out) {
 		
-		Matrix result = new Matrix(b.rows, b.columns);
+		assert b.size == out.size;
 		
-		IntStream.range(0, result.rows * result.columns).parallel().forEach(i -> {
-			result.data[i] = a * b.data[i];
-		});
+		clSetKernelArg(dotKernel, 0, Sizeof.cl_float, Pointer.to(new float[] { a }));
+		clSetKernelArg(dotKernel, 1, Sizeof.cl_mem, Pointer.to(new cl_mem[] { b.mData }));
+		clSetKernelArg(dotKernel, 2, Sizeof.cl_mem, Pointer.to(new cl_mem[] { out.mData }));
 		
-		return result;
+		global[0] = b.size;
 		
-	}
-	
-	public static Matrix multiply(Matrix a, Matrix b) {
+		local[0] = 1;
 		
-		assert a.columns == b.columns && a.rows == b.rows;
+		clEnqueueNDRangeKernel(commandQueue, fltMulKernel, 1, null, global, null, 0, null, null);
 		
-		Matrix result = new Matrix(a.rows, b.columns);
 		
-		IntStream.range(0, result.rows * result.columns).parallel().forEach(i -> {
-			result.data[i] = a.data[i] * b.data[i];
-		});
-		
-		return result;
+		return out;
 		
 	}
 	
-	public static Matrix divide(Matrix a, Matrix b) {
+	public static Matrix multiply(Matrix a, Matrix b, Matrix out) {
+		
+		assert a.columns == b.columns && a.rows == b.rows && out.columns == a.columns && out.rows == a.rows;
+		
+		clSetKernelArg(dotKernel, 0, Sizeof.cl_mem, Pointer.to(new cl_mem[] { a.mData }));
+		clSetKernelArg(dotKernel, 1, Sizeof.cl_mem, Pointer.to(new cl_mem[] { b.mData }));
+		clSetKernelArg(dotKernel, 2, Sizeof.cl_mem, Pointer.to(new cl_mem[] { out.mData }));
+		
+		global[0] = a.size;
+		
+		local[0] = 1;
+		
+		clEnqueueNDRangeKernel(commandQueue, mulKernel, 1, null, global, null, 0, null, null);
+		
+		
+		return out;
+		
+	}
+	
+	@Deprecated
+	public static Matrix divide(Matrix a, Matrix b, Matrix out) {
 		
 		assert a.columns == b.columns && a.rows == b.rows;
 		
@@ -342,7 +357,8 @@ public class Matrix implements Serializable {
 		
 	}
 	
-	public static Matrix divide(float a, Matrix b) {
+	@Deprecated
+	public static Matrix divide(float a, Matrix b, Matrix out) {
 		
 		Matrix result = new Matrix(b.rows, b.columns);
 		
@@ -354,7 +370,8 @@ public class Matrix implements Serializable {
 		
 	}
 	
-	public static Matrix divide(Matrix a, float b) {
+	@Deprecated
+	public static Matrix divide(Matrix a, float b, Matrix out) {
 		
 		Matrix result = new Matrix(a.rows, a.columns);
 		
@@ -366,134 +383,100 @@ public class Matrix implements Serializable {
 		
 	}
 	
-	public static Matrix transpose(Matrix a) {
+	public static Matrix transpose(Matrix a, Matrix out) {
 		
-		Matrix result = new Matrix(a.columns, a.rows);
+		a.isTransposed = !a.isTransposed;
+		
+		float[] oldData = a.getData();
+		float[] newData = new float[oldData.length];
+		
 		for (int row = 0; row < a.rows; row++) {
 			for (int column = 0; column < a.columns; column++) {
-				result.data[column * a.rows + row] = a.data[row * a.columns + column];
+				newData[column * a.rows + row] = oldData[row * a.columns + column];
 			}
 		}
 		
-		return result;
+		return new Matrix(a.columns, a.rows, newData);
 	}
 	
-	public static Matrix add(Matrix a, Matrix b) {
+	public static Matrix add(Matrix a, Matrix b, Matrix out) {
 		
-		assert a.rows == b.rows && a.columns == b.columns;
+		assert a.columns == b.columns && a.rows == b.rows && out.columns == a.columns && out.rows == a.rows;
 		
-		Matrix result = new Matrix(a.rows, a.columns);
-		IntStream.range(0, result.rows * result.columns).parallel().forEach(i -> {
-			result.data[i] = a.data[i] + b.data[i];
-		});
+		clSetKernelArg(addKernel, 0, Sizeof.cl_mem, Pointer.to(new cl_mem[] { a.mData }));
+		clSetKernelArg(addKernel, 1, Sizeof.cl_mem, Pointer.to(new cl_mem[] { b.mData }));
+		clSetKernelArg(addKernel, 2, Sizeof.cl_mem, Pointer.to(new cl_mem[] { out.mData }));
 		
-		return result;
-		
-	}
-	
-	public static Matrix sub(Matrix a, Matrix b) {
-		
-		assert a.rows == b.rows && a.columns == b.columns;
-		
-		Matrix result = new Matrix(a.rows, a.columns);
-		IntStream.range(0, result.rows * result.columns).parallel().forEach(i -> {
-			result.data[i] = a.data[i] - b.data[i];
-		});
-		
-		return result;
-		
-	}
-	
-	public static double sum(Matrix a) {
-		
-		return (double) IntStream.range(0, a.rows * a.columns).parallel().mapToDouble(i -> {
-			return a.data[i];
-		}).sum();
-		
-	}
-	
-	public static Matrix sigmoid(Matrix a) {
-		
-		int rows, columns;
-		
-		rows = a.getRows();
-		columns = a.getColumns();
-		
-		int szA = rows * columns;
-		
-		float[] mIn, mOut;
-		
-		mOut = new float[szA];
-		
-		mIn = a.data;
-		
-		Pointer pIn = Pointer.to(mIn);
-		Pointer pOut = Pointer.to(mOut);
-		
-		cl_mem memIn, memOut;
-		
-		memIn = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * szA, pIn, null);
-		memOut = clCreateBuffer(context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * szA, pOut, null);
-		
-		clEnqueueWriteBuffer(commandQueue, memIn, CL_TRUE, 0, Sizeof.cl_float * szA, pIn, 0, null, null);
-		
-		clSetKernelArg(sigKernel, 0, Sizeof.cl_mem, Pointer.to(new cl_mem[] { memIn }));
-		clSetKernelArg(sigKernel, 1, Sizeof.cl_mem, Pointer.to(new cl_mem[] { memOut }));
-		
-		global[0] = rows * columns;
+		global[0] = a.size;
 		
 		local[0] = 1;
 		
-		clEnqueueNDRangeKernel(commandQueue, sigKernel, 1, null, global, null, 0, null, null);
-		clEnqueueReadBuffer(commandQueue, memOut, CL_TRUE, 0, Sizeof.cl_float * szA, Pointer.to(mOut), 0, null, null);
+		clEnqueueNDRangeKernel(commandQueue, addKernel, 1, null, global, null, 0, null, null);
 		
-		Matrix out = new Matrix(rows, columns, mOut);
-		
-		clReleaseMemObject(memIn);
-		clReleaseMemObject(memOut);
 		
 		return out;
 		
 	}
 	
-	public static Matrix sigmoidPrime(Matrix a) {
-		int rows, columns;
+	public static Matrix sub(Matrix a, Matrix b, Matrix out) {
 		
-		rows = a.getRows();
-		columns = a.getColumns();
+		assert a.columns == b.columns && a.rows == b.rows && out.columns == a.columns && out.rows == a.rows;
 		
-		int szA = rows * columns;
+		clSetKernelArg(subKernel, 0, Sizeof.cl_mem, Pointer.to(new cl_mem[] { a.mData }));
+		clSetKernelArg(subKernel, 1, Sizeof.cl_mem, Pointer.to(new cl_mem[] { b.mData }));
+		clSetKernelArg(subKernel, 2, Sizeof.cl_mem, Pointer.to(new cl_mem[] { out.mData }));
 		
-		float[] mIn, mOut;
+		global[0] = a.size;
 		
-		mOut = new float[szA];
+		local[0] = 1;
 		
-		mIn = a.data;
+		clEnqueueNDRangeKernel(commandQueue, subKernel, 1, null, global, null, 0, null, null);
 		
-		Pointer pIn = Pointer.to(mIn);
-		Pointer pOut = Pointer.to(mOut);
 		
-		cl_mem memIn, memOut;
+		return out;
 		
-		memIn = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * szA, pIn, null);
-		memOut = clCreateBuffer(context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * szA, pOut, null);
+	}
+	
+	
+	public static double sum(Matrix a) {
 		
-		clEnqueueWriteBuffer(commandQueue, memIn, CL_TRUE, 0, Sizeof.cl_float * szA, pIn, 0, null, null);
+		float[] data = a.getData();
 		
-		clSetKernelArg(sigPrimeKernel, 0, Sizeof.cl_mem, Pointer.to(new cl_mem[] { memIn }));
-		clSetKernelArg(sigPrimeKernel, 1, Sizeof.cl_mem, Pointer.to(new cl_mem[] { memOut }));
+		return (double) IntStream.range(0, a.rows * a.columns).parallel().mapToDouble(i -> {
+			return data[i];
+		}).sum();
 		
-		global[0] = rows * columns;
+	}
+	
+	public static Matrix sigmoid(Matrix a, Matrix out) {
+		
+		assert out.size == a.size;
+		
+		clSetKernelArg(sigKernel, 0, Sizeof.cl_mem, Pointer.to(new cl_mem[] { a.mData }));
+		clSetKernelArg(sigKernel, 1, Sizeof.cl_mem, Pointer.to(new cl_mem[] { out.mData }));
+		
+		global[0] = a.size;
+		
+		local[0] = 1;
+		
+		clEnqueueNDRangeKernel(commandQueue, sigKernel, 1, null, global, null, 0, null, null);
+		
+		return out;
+		
+	}
+	
+	public static Matrix sigmoidPrime(Matrix a, Matrix out) {
+		
+		assert a.size == out.size;
+		
+		clSetKernelArg(sigPrimeKernel, 0, Sizeof.cl_mem, Pointer.to(new cl_mem[] { a.mData }));
+		clSetKernelArg(sigPrimeKernel, 1, Sizeof.cl_mem, Pointer.to(new cl_mem[] { out.mData }));
+		
+		global[0] = a.size;
 		
 		local[0] = 1;
 		
 		clEnqueueNDRangeKernel(commandQueue, sigPrimeKernel, 1, null, global, null, 0, null, null);
-		clEnqueueReadBuffer(commandQueue, memOut, CL_TRUE, 0, Sizeof.cl_float * szA, Pointer.to(mOut), 0, null, null);
-		
-		Matrix out = new Matrix(rows, columns, mOut);
-		
-		clReleaseMemObject(memIn);
-		clReleaseMemObject(memOut);
 		
 		return out;
 	}
@@ -501,16 +484,7 @@ public class Matrix implements Serializable {
 	@Override
 	public String toString() {
 		
-		StringBuilder string = new StringBuilder();
-		
-		for (int row = 0; row < rows; row++) {
-			for (int column = 0; column < columns; column++) {
-				string.append(data[row * columns + column] + "\t");
-			}
-			string.append("\n");
-		}
-		
-		return string.toString();
+		return rows + "x" + columns + " " + super.toString();
 		
 	}
 	
