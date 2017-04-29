@@ -106,6 +106,8 @@ public abstract class TrainingScheme {
 				callback.iterated(network, iteration + 1, trainingCost, testingCost, timeElapsed);
 			}
 			
+			System.gc(); // to make sure that there is always as much free video memory as possible
+			
 		}
 		
 		System.out.println("Training Completed");
