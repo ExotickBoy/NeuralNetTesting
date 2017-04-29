@@ -10,5 +10,5 @@ __kernel void matdot(
 	
 	for (k=0; k<pdim; k++)
  		tmp += A[row*pdim+k] * B[k*ndim+col];
- 	C[row*ndim+col] += tmp;
+ 	C[row*ndim+col] = tmp;
 }
