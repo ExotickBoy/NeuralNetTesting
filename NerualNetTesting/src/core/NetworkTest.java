@@ -93,23 +93,21 @@ public class NetworkTest {
 		
 		private void callback(BufferedImage i) {
 			
-			Matrix img = new Matrix(1, 28 * 28);
-			
-			int k = 0;
+			float[] imageData = new float[28 * 28];
 			
 			for (int x = 0; x < 28; x++) {
 				for (int y = 0; y < 28; y++) {
 					
-					img.set(k++, (i.getRGB(x, y) & 0xff) / 255d);
+					imageData[x * +y] = (float) ((i.getRGB(x, y) & 0xff) / 255d);
 					
 				}
 			}
 			
-			Matrix result = network.forward(img);
-			System.out.println(result);
-			HashMap<Integer, Double> map = new HashMap<>();
+			float[] results = network.forward(new Matrix(28 * 28, 1, imageData)).getData();
+			
+			HashMap<Integer, Float> map = new HashMap<>();
 			for (int j = 0; j < 10; j++) {
-				map.put(j, result.get(0, j));
+				map.put(j, results[j]);
 			}
 			map.entrySet().stream().max((a, b) -> Double.compare(a.getValue(), b.getValue())).ifPresent(e -> {
 				

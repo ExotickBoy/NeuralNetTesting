@@ -140,12 +140,12 @@ public class Train {
 		
 		if (isStochastic) {
 			
-			trainer = new StochasticTraining(xTraining, yTraining, network, new GradientDescent((float) learningRate), random);
+			trainer = new StochasticTraining(xTraining, yTraining, network, new GradientDescent(network, (float) learningRate), random);
 			System.out.println("Using Stochastic Training");
 			
 		} else {
 			
-			trainer = new BatchTraining(xTraining, yTraining, network, new GradientDescent((float) learningRate));
+			trainer = new BatchTraining(xTraining, yTraining, network, new GradientDescent(network, (float) learningRate));
 			System.out.println("Using Batch Training");
 			
 		}
@@ -208,15 +208,15 @@ public class Train {
 			InputStream in = new FileInputStream(file);
 			in.read(new byte[16]);
 			
-			Matrix data = new Matrix(SAMPLE_HEIGHT * SAMPLE_WIDTH, samples);
+			float[] data = new float[SAMPLE_HEIGHT * SAMPLE_WIDTH * samples];
 			
 			byte[] read = new byte[SAMPLE_HEIGHT * SAMPLE_WIDTH * samples];
 			in.read(read, 0, SAMPLE_HEIGHT * SAMPLE_WIDTH * samples);
 			
-			for (int sample = 0; sample < samples; sample++) {
-				for (int pixel = 0; pixel < SAMPLE_HEIGHT * SAMPLE_WIDTH; pixel++) {
+			for (int pixel = 0; pixel < SAMPLE_HEIGHT * SAMPLE_WIDTH; pixel++) {
+				for (int sample = 0; sample < samples; sample++) {
 					
-					data.set(pixel, sample, (read[sample] & 0xff) / 255d);
+					data[pixel * SAMPLE_HEIGHT * SAMPLE_WIDTH + sample] = (float) ((read[sample] & 0xff) / 255f);
 					
 				}
 				
@@ -224,7 +224,7 @@ public class Train {
 			
 			in.close();
 			
-			return data;
+			return new Matrix(SAMPLE_HEIGHT * SAMPLE_WIDTH, samples, data);
 			
 		} catch (IOException e) {
 			
@@ -252,16 +252,18 @@ public class Train {
 			InputStream in = new FileInputStream(file);
 			in.read(new byte[16]);
 			
-			Matrix data = new Matrix(10, samples);
+			float[] data = new float[10 * samples];
 			byte[] read = new byte[samples];
 			in.read(read);
 			for (int sample = 0; sample < samples; sample++) {
-				data.set(read[sample] & 0xff, sample, 1);
+				
+				data[(read[sample] & 0xff) * samples + sample] = 1;
+				
 			}
 			
 			in.close();
 			
-			return data;
+			return new Matrix(10, samples, data);
 			
 		} catch (IOException e) {
 			e.printStackTrace();

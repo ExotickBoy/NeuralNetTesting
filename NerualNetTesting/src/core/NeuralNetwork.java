@@ -1,14 +1,6 @@
 
 package core;
 
-import static core.Matrix.dot;
-import static core.Matrix.map;
-import static core.Matrix.multiply;
-import static core.Matrix.sigmoidPrime;
-import static core.Matrix.sub;
-import static core.Matrix.sum;
-import static core.Matrix.transpose;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -41,6 +33,8 @@ public class NeuralNetwork implements Serializable {
 	private transient Matrix[] x;
 	private transient Matrix[] delta;
 	
+	private transient Matrix yDif; // y - yHat
+	
 	/**
 	 * 
 	 * Creates a new NeuralNetwork which is a copy of the network passed to it
@@ -59,6 +53,8 @@ public class NeuralNetwork implements Serializable {
 		x = new Matrix[numberOfHiddenLayers + 2];
 		djdw = new Matrix[w.length];
 		delta = new Matrix[w.length];
+		
+		yDif = new Matrix(network.outputLayerSize, 1);
 		
 		for (int i = 0; i < w.length; i++) {
 			w[i] = new Matrix(network.w[i]);
@@ -96,11 +92,23 @@ public class NeuralNetwork implements Serializable {
 		djdw = new Matrix[w.length];
 		delta = new Matrix[w.length];
 		
+		yDif = new Matrix(outputLayerSize, 1);
+		
 		w[0] = new Matrix(hiddenLayerSize, inputLayerSize, r::nextGaussian);
 		for (int i = 1; i < numberOfHiddenLayers; i++) {
 			w[i] = new Matrix(hiddenLayerSize, hiddenLayerSize, r::nextGaussian);
 		}
 		w[numberOfHiddenLayers] = new Matrix(outputLayerSize, hiddenLayerSize, r::nextGaussian);
+		
+		x[0] = new Matrix(inputLayerSize, 1);
+		for (int i = 1; i < numberOfHiddenLayers + 1; i++) {
+			x[i] = new Matrix(hiddenLayerSize, 1);
+		}
+		x[numberOfHiddenLayers + 1] = new Matrix(outputLayerSize, 1);
+		
+		for (int i = 0; i < w.length; i++) {
+			djdw[i] = new Matrix(w[i].getRows(), w[i].getColumns());
+		}
 		
 	}
 	
@@ -119,7 +127,8 @@ public class NeuralNetwork implements Serializable {
 		x[0] = x0;
 		for (int i = 0; i < w.length; i++) {
 			
-			x[i + 1] = Matrix.sigmoid(dot(w[i], x[i]));
+			Matrix.dot(w[i], x[i], x[i + 1]);
+			Matrix.sigmoid(x[i + 1], x[i + 1]);
 			
 		}
 		
@@ -140,7 +149,7 @@ public class NeuralNetwork implements Serializable {
 	 *            - the expected output
 	 * @return the cost
 	 */
-	public double getCost(Matrix x0, Matrix y) {
+	public float getCost(Matrix x0, Matrix y) {
 		
 		return getCost(x0, y, forward(x0));
 		
@@ -159,9 +168,12 @@ public class NeuralNetwork implements Serializable {
 	 *            - the actual output data
 	 * @return the cost
 	 */
-	public double getCost(Matrix x, Matrix y, Matrix yHat) {
+	public float getCost(Matrix x, Matrix y, Matrix yHat) {
 		
-		return 0.5 * sum(map(sub(y, yHat), z -> z * z)) / x.getColumns();
+		Matrix.sub(y, yHat, yDif);
+		Matrix.pow(yDif, 2f, yDif);
+		
+		return 0.5f * Matrix.sum(yDif) / x.getColumns();
 		
 	}
 	
@@ -201,15 +213,23 @@ public class NeuralNetwork implements Serializable {
 			
 			if (i == w.length - 1) {
 				
-				delta[i] = multiply(sub(yHat, y), sigmoidPrime(x[i + 1]));
+				Matrix.sub(y, yHat, yDif);
+				Matrix.sigmoidPrime(x[i + 1], x[i + 1]);
+				Matrix.multiply(yDif, x[i + 1], delta[i]);
 				
 			} else {
 				
-				delta[i] = multiply(dot(transpose(w[i + 1]), delta[i + 1]), sigmoidPrime(x[i + 1]));
+				Matrix.sigmoidPrime(x[i + 1], x[i + 1]);
+				Matrix.transpose(x[i + 1], x[i + 1]);
+				Matrix.dot(w[i + 1], delta[i + 1], delta[i + 1]);
+				Matrix.multiply(delta[i + 1], x[i + 1], delta[i]);
+				Matrix.transpose(x[i + 1], x[i + 1]);
 				
 			}
 			
-			djdw[i] = dot(delta[i], transpose(x[i]));
+			Matrix.transpose(x[i], x[i]);
+			Matrix.dot(delta[i], x[i], djdw[i]);
+			Matrix.transpose(x[i], x[i]);
 			
 		}
 		

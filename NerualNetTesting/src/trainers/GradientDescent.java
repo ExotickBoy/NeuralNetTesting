@@ -1,11 +1,7 @@
 package trainers;
 
-import static core.Matrix.multiply;
-import static core.Matrix.sub;
-
-import java.util.stream.IntStream;
-
 import core.Matrix;
+import core.NeuralNetwork;
 
 /**
  * Simplest linear method for finding the minimum
@@ -17,7 +13,9 @@ public class GradientDescent extends OptimisationMethod {
 	
 	private float learningRate;
 	
-	public GradientDescent(float learningRate) {
+	public GradientDescent(NeuralNetwork network, float learningRate) {
+		
+		super(network);
 		
 		this.learningRate = learningRate;
 		
@@ -26,11 +24,12 @@ public class GradientDescent extends OptimisationMethod {
 	@Override
 	public void descend(Matrix[] w, Matrix[] djdw) {
 		
-		IntStream.range(0, w.length).parallel().forEach(i -> {
+		for (int i = 0; i < w.length; i++) {
 			
-			w[i] = sub(w[i], multiply(learningRate, djdw[i]));
+			Matrix.multiply(learningRate, djdw[i], djdw[i]);
+			Matrix.sub(w[i], djdw[i], w[i]);
 			
-		});
+		}
 		
 	}
 	

@@ -31,28 +31,35 @@ public class StochasticTraining extends TrainingScheme {
 		miniBatchesX = new ArrayList<Matrix>();
 		miniBatchesY = new ArrayList<Matrix>();
 		
+		float[] xTrainingData = xTraining.getData();
+		float[] yTrainingData = yTraining.getData();
+		
 		int numMinibatches = (int) (xTraining.getRows() / SGD_MINIBATCH_SIZE);
 		
 		// Split x and y into minibatches
 		for (int i = 0; i < numMinibatches; i++) {
 			
-			Matrix batchX = new Matrix(xTraining.getRows(), SGD_MINIBATCH_SIZE);
-			Matrix batchY = new Matrix(10, SGD_MINIBATCH_SIZE);
+			float[] batchX = new float[xTraining.getRows() * SGD_MINIBATCH_SIZE];
+			float[] batchY = new float[yTraining.getRows() * SGD_MINIBATCH_SIZE];
 			
-			for (int row = 0; row < batchX.getRows(); row++) {
-				for (int col = 0; col < batchX.getColumns(); col++) {
-					batchX.set(row, col, xTraining.get(row, col + SGD_MINIBATCH_SIZE * i));
+			for (int row = 0; row < xTraining.getRows(); row++) {
+				for (int col = 0; col < SGD_MINIBATCH_SIZE; col++) {
+					
+					batchX[row * xTraining.getRows() + col] = xTrainingData[row * xTraining.getRows() + col + SGD_MINIBATCH_SIZE * i];
+					
 				}
 			}
 			
-			for (int row = 0; row < batchY.getRows(); row++) {
-				for (int col = 0; col < batchY.getColumns(); col++) {
-					batchY.set(row, col, yTraining.get(row, col + SGD_MINIBATCH_SIZE * i));
+			for (int row = 0; row < yTraining.getRows(); row++) {
+				for (int col = 0; col < SGD_MINIBATCH_SIZE; col++) {
+					
+					batchY[row * yTraining.getRows() + col] = yTrainingData[row * xTraining.getRows() + col + SGD_MINIBATCH_SIZE * i];
+					
 				}
 			}
 			
-			miniBatchesX.add(batchX);
-			miniBatchesY.add(batchY);
+			miniBatchesX.add(new Matrix(xTraining.getRows(), SGD_MINIBATCH_SIZE, batchX));
+			miniBatchesY.add(new Matrix(yTraining.getRows(), SGD_MINIBATCH_SIZE, batchY));
 			
 		}
 		
