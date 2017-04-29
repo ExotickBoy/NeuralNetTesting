@@ -162,12 +162,14 @@ public class Matrix implements Serializable {
 		
 		this.rows = rows;
 		this.columns = columns;
-		
 		this.size = rows * columns;
-		
-		this.mData = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * size, Pointer.to(data), null);
-		System.out.println("MASSIVE COCK");
 		isTransposed = false;
+		
+		Pointer pointer = Pointer.to(data);
+		mData = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * size, pointer, null);
+		clEnqueueWriteBuffer(commandQueue, mData, CL_TRUE, 0, Sizeof.cl_float * size, pointer, 0, null, null);
+		
+		System.out.println("MASSIVE COCK");
 		
 	}
 	
@@ -188,16 +190,18 @@ public class Matrix implements Serializable {
 		this.rows = a.rows;
 		this.columns = a.columns;
 		this.size = rows * columns;
+		this.isTransposed = a.isTransposed;
 		
-		clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * size, Pointer.to(a.mData), null);
-		System.out.println("MASSIVE COCK");
+		Pointer pointer = Pointer.to(a.mData);
+		mData = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * size, pointer, null);
+		clEnqueueWriteBuffer(commandQueue, mData, CL_TRUE, 0, Sizeof.cl_float * size, pointer, 0, null, null);
+		
 	}
 	
 	@Override
 	protected void finalize() throws Throwable { // called by the garbage collector
 		
 		super.finalize();
-		System.out.println("finalized !");
 		clReleaseMemObject(mData);
 		
 	}
@@ -238,7 +242,7 @@ public class Matrix implements Serializable {
 	
 	public static Matrix dot(Matrix a, Matrix b, Matrix out) {
 		
-		assert a.columns == b.rows;
+		assert a.columns == b.rows && out.rows == a.rows && out.columns == b.columns;
 		
 		int mdim, ndim, pdim;
 		
@@ -302,7 +306,7 @@ public class Matrix implements Serializable {
 		assert out.columns == a.columns && out.rows == a.rows;
 		
 		clSetKernelArg(matPowKernel, 0, Sizeof.cl_mem, Pointer.to(new cl_mem[] { a.mData }));
-		clSetKernelArg(matPowKernel, 1, Sizeof.cl_mem, Pointer.to(new float[] { b }));
+		clSetKernelArg(matPowKernel, 1, Sizeof.cl_float, Pointer.to(new float[] { b }));
 		clSetKernelArg(matPowKernel, 2, Sizeof.cl_mem, Pointer.to(new cl_mem[] { out.mData }));
 		
 		global[0] = a.size;
@@ -333,7 +337,7 @@ public class Matrix implements Serializable {
 		
 		assert out.columns == b.columns && out.rows == b.rows;
 		
-		clSetKernelArg(fltMatDivKernel, 0, Sizeof.cl_mem, Pointer.to(new float[] { a }));
+		clSetKernelArg(fltMatDivKernel, 0, Sizeof.cl_float, Pointer.to(new float[] { a }));
 		clSetKernelArg(fltMatDivKernel, 1, Sizeof.cl_mem, Pointer.to(new cl_mem[] { b.mData }));
 		clSetKernelArg(fltMatDivKernel, 2, Sizeof.cl_mem, Pointer.to(new cl_mem[] { out.mData }));
 		
@@ -351,7 +355,7 @@ public class Matrix implements Serializable {
 		assert out.columns == a.columns && out.rows == a.rows;
 		
 		clSetKernelArg(matFltDivKernel, 0, Sizeof.cl_mem, Pointer.to(new cl_mem[] { a.mData }));
-		clSetKernelArg(matFltDivKernel, 1, Sizeof.cl_mem, Pointer.to(new float[] { b }));
+		clSetKernelArg(matFltDivKernel, 1, Sizeof.cl_float, Pointer.to(new float[] { b }));
 		clSetKernelArg(matFltDivKernel, 2, Sizeof.cl_mem, Pointer.to(new cl_mem[] { out.mData }));
 		
 		global[0] = a.size;
@@ -367,7 +371,11 @@ public class Matrix implements Serializable {
 		
 		assert a.size == out.size;
 		
-		a.isTransposed = !a.isTransposed;
+		int rows = a.rows;
+		int columns = a.columns;
+		
+		out.columns = rows;
+		out.rows = columns;
 		
 		float[] oldData = a.getData();
 		float[] newData = new float[oldData.length];

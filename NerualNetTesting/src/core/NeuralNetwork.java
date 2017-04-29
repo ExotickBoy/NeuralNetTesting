@@ -54,8 +54,6 @@ public class NeuralNetwork implements Serializable {
 		djdw = new Matrix[w.length];
 		delta = new Matrix[w.length];
 		
-		yDif = new Matrix(network.outputLayerSize, 1);
-		
 		for (int i = 0; i < w.length; i++) {
 			w[i] = new Matrix(network.w[i]);
 		}
@@ -92,19 +90,11 @@ public class NeuralNetwork implements Serializable {
 		djdw = new Matrix[w.length];
 		delta = new Matrix[w.length];
 		
-		yDif = new Matrix(outputLayerSize, 1);
-		
 		w[0] = new Matrix(hiddenLayerSize, inputLayerSize, r::nextGaussian);
 		for (int i = 1; i < numberOfHiddenLayers; i++) {
 			w[i] = new Matrix(hiddenLayerSize, hiddenLayerSize, r::nextGaussian);
 		}
 		w[numberOfHiddenLayers] = new Matrix(outputLayerSize, hiddenLayerSize, r::nextGaussian);
-		
-		x[0] = new Matrix(inputLayerSize, 1);
-		for (int i = 1; i < numberOfHiddenLayers + 1; i++) {
-			x[i] = new Matrix(hiddenLayerSize, 1);
-		}
-		x[numberOfHiddenLayers + 1] = new Matrix(outputLayerSize, 1);
 		
 		for (int i = 0; i < w.length; i++) {
 			djdw[i] = new Matrix(w[i].getRows(), w[i].getColumns());
@@ -125,6 +115,11 @@ public class NeuralNetwork implements Serializable {
 		assert x0.getRows() == inputLayerSize;
 		
 		x[0] = x0;
+		for (int i = 1; i < numberOfHiddenLayers + 1; i++) {
+			x[i] = new Matrix(hiddenLayerSize, x0.getColumns());
+		}
+		x[numberOfHiddenLayers + 1] = new Matrix(outputLayerSize, x0.getColumns());
+		
 		for (int i = 0; i < w.length; i++) {
 			
 			Matrix.dot(w[i], x[i], x[i + 1]);
@@ -170,6 +165,8 @@ public class NeuralNetwork implements Serializable {
 	 */
 	public float getCost(Matrix x, Matrix y, Matrix yHat) {
 		
+		yDif = new Matrix(outputLayerSize, x.getColumns());
+		
 		Matrix.sub(y, yHat, yDif);
 		Matrix.pow(yDif, 2f, yDif);
 		
@@ -211,6 +208,8 @@ public class NeuralNetwork implements Serializable {
 		
 		for (int i = w.length - 1; i >= 0; i--) {
 			
+			delta[i] = new Matrix(1, x0.getColumns());
+			
 			if (i == w.length - 1) {
 				
 				Matrix.sub(y, yHat, yDif);
@@ -221,8 +220,9 @@ public class NeuralNetwork implements Serializable {
 				
 				Matrix.sigmoidPrime(x[i + 1], x[i + 1]);
 				Matrix.transpose(x[i + 1], x[i + 1]);
-				Matrix.dot(w[i + 1], delta[i + 1], delta[i + 1]);
-				Matrix.multiply(delta[i + 1], x[i + 1], delta[i]);
+				Matrix temp = new Matrix(w[i + 1].getRows(), delta[i + 1].getColumns());
+				Matrix.dot(w[i + 1], delta[i + 1], temp);// 100,1 *
+				Matrix.multiply(temp, x[i + 1], delta[i]);
 				Matrix.transpose(x[i + 1], x[i + 1]);
 				
 			}
