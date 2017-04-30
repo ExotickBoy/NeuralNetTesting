@@ -169,8 +169,6 @@ public class Matrix implements Serializable {
 		mData = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * size, pointer, null);
 		clEnqueueWriteBuffer(commandQueue, mData, CL_TRUE, 0, Sizeof.cl_float * size, pointer, 0, null, null);
 		
-		System.out.println("MASSIVE COCK");
-		
 	}
 	
 	public Matrix(int rows, int columns) {
@@ -198,11 +196,22 @@ public class Matrix implements Serializable {
 		
 	}
 	
+	public void release() {
+				
+		if (mData != null) {
+			
+			clReleaseMemObject(mData);
+			mData = null;
+			
+		}
+		
+	}
+	
 	@Override
 	protected void finalize() throws Throwable { // called by the garbage collector
 		
 		super.finalize();
-		clReleaseMemObject(mData);
+		release();
 		
 	}
 	

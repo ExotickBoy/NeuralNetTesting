@@ -208,22 +208,28 @@ public class NeuralNetwork implements Serializable {
 		
 		for (int i = w.length - 1; i >= 0; i--) {
 			
-			delta[i] = new Matrix(1, x0.getColumns());
+			if (delta[i] == null || delta[i].getColumns() != x0.getColumns() || delta[i].getRows() != x[i + 1].getRows()) {
+				delta[i] = new Matrix(x[i + 1].getRows(), x0.getColumns());
+			}
 			
 			if (i == w.length - 1) {
 				
-				Matrix.sub(y, yHat, yDif);
+				Matrix.sub(yHat, y, yDif);
 				Matrix.sigmoidPrime(x[i + 1], x[i + 1]);
 				Matrix.multiply(yDif, x[i + 1], delta[i]);
 				
 			} else {
 				
 				Matrix.sigmoidPrime(x[i + 1], x[i + 1]);
-				Matrix.transpose(x[i + 1], x[i + 1]);
+				Matrix.transpose(w[i + 1], w[i + 1]);
+				
 				Matrix temp = new Matrix(w[i + 1].getRows(), delta[i + 1].getColumns());
-				Matrix.dot(w[i + 1], delta[i + 1], temp);// 100,1 *
+				Matrix.dot(w[i + 1], delta[i + 1], temp);
 				Matrix.multiply(temp, x[i + 1], delta[i]);
-				Matrix.transpose(x[i + 1], x[i + 1]);
+				
+				Matrix.transpose(w[i + 1], w[i + 1]);
+				
+				temp.release();
 				
 			}
 			
