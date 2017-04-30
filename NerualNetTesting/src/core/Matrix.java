@@ -59,6 +59,8 @@ public class Matrix implements Serializable {
 	private static cl_kernel matMatDivKernel;
 	private static cl_kernel fltMulKernel;
 	private static cl_kernel matPowKernel;
+	private static cl_kernel dotATKernel;
+	private static cl_kernel dotBTKernel;
 	
 	private static long[] global = new long[2];
 	private static long[] local = new long[2];
@@ -126,6 +128,8 @@ public class Matrix implements Serializable {
 			fltMatDivKernel = loadKernel("fltmatdiv");
 			matMatDivKernel = loadKernel("matmatdiv");
 			subKernel = loadKernel("matsub");
+			dotATKernel = loadKernel("matdotat");
+			dotBTKernel = loadKernel("matdotbt");
 			
 		} catch (IOException e) {
 			
@@ -249,29 +253,72 @@ public class Matrix implements Serializable {
 		
 	}
 	
-	public static Matrix dot(Matrix a, Matrix b, Matrix out) {
+	public static Matrix dot(Matrix a, Matrix b, Matrix out, boolean aT, boolean bT) {
 		
 		assert a.columns == b.rows && out.rows == a.rows && out.columns == b.columns;
 		
+		assert !(aT && bT);
+		
 		int mdim, ndim, pdim;
 		
-		mdim = a.getRows();
-		ndim = b.getColumns();
-		pdim = a.getColumns();
+		if (!aT && !bT) {
+			
+			mdim = a.getRows();
+			ndim = b.getColumns();
+			pdim = a.getColumns();
+			
+			clSetKernelArg(dotKernel, 0, Sizeof.cl_int, Pointer.to(new int[] { mdim }));
+			clSetKernelArg(dotKernel, 1, Sizeof.cl_int, Pointer.to(new int[] { ndim }));
+			clSetKernelArg(dotKernel, 2, Sizeof.cl_int, Pointer.to(new int[] { pdim }));
+			clSetKernelArg(dotKernel, 3, Sizeof.cl_mem, Pointer.to(new cl_mem[] { a.mData }));
+			clSetKernelArg(dotKernel, 4, Sizeof.cl_mem, Pointer.to(new cl_mem[] { b.mData }));
+			clSetKernelArg(dotKernel, 5, Sizeof.cl_mem, Pointer.to(new cl_mem[] { out.mData }));
+			
+			global[0] = ndim;
+			global[1] = mdim;
+			local[0] = 1;
+			
+			clEnqueueNDRangeKernel(commandQueue, dotKernel, 2, null, global, null, 0, null, null);
+		}
 		
-		clSetKernelArg(dotKernel, 0, Sizeof.cl_int, Pointer.to(new int[] { mdim }));
-		clSetKernelArg(dotKernel, 1, Sizeof.cl_int, Pointer.to(new int[] { ndim }));
-		clSetKernelArg(dotKernel, 2, Sizeof.cl_int, Pointer.to(new int[] { pdim }));
-		clSetKernelArg(dotKernel, 3, Sizeof.cl_mem, Pointer.to(new cl_mem[] { a.mData }));
-		clSetKernelArg(dotKernel, 4, Sizeof.cl_mem, Pointer.to(new cl_mem[] { b.mData }));
-		clSetKernelArg(dotKernel, 5, Sizeof.cl_mem, Pointer.to(new cl_mem[] { out.mData }));
-		
-		global[0] = ndim;
-		global[1] = mdim;
-		local[0] = 1;
-		
-		clEnqueueNDRangeKernel(commandQueue, dotKernel, 2, null, global, null, 0, null, null);
-		
+		if (aT) {
+			
+			mdim = a.getColumns();
+			ndim = b.getColumns();
+			pdim = a.getRows();
+			
+			clSetKernelArg(dotATKernel, 0, Sizeof.cl_int, Pointer.to(new int[] { mdim }));
+			clSetKernelArg(dotATKernel, 1, Sizeof.cl_int, Pointer.to(new int[] { ndim }));
+			clSetKernelArg(dotATKernel, 2, Sizeof.cl_int, Pointer.to(new int[] { pdim }));
+			clSetKernelArg(dotATKernel, 3, Sizeof.cl_mem, Pointer.to(new cl_mem[] { a.mData }));
+			clSetKernelArg(dotATKernel, 4, Sizeof.cl_mem, Pointer.to(new cl_mem[] { b.mData }));
+			clSetKernelArg(dotATKernel, 5, Sizeof.cl_mem, Pointer.to(new cl_mem[] { out.mData }));
+			
+			global[0] = mdim;
+			global[1] = ndim;
+			local[0] = 1;
+			
+			clEnqueueNDRangeKernel(commandQueue, dotATKernel, 2, null, global, null, 0, null, null);
+			
+		}
+		else if (bT){
+			mdim = a.getRows();
+			ndim = b.getRows();
+			pdim = a.getColumns();
+			
+			clSetKernelArg(dotBTKernel, 0, Sizeof.cl_int, Pointer.to(new int[] { mdim }));
+			clSetKernelArg(dotBTKernel, 1, Sizeof.cl_int, Pointer.to(new int[] { ndim }));
+			clSetKernelArg(dotBTKernel, 2, Sizeof.cl_int, Pointer.to(new int[] { pdim }));
+			clSetKernelArg(dotBTKernel, 3, Sizeof.cl_mem, Pointer.to(new cl_mem[] { a.mData }));
+			clSetKernelArg(dotBTKernel, 4, Sizeof.cl_mem, Pointer.to(new cl_mem[] { b.mData }));
+			clSetKernelArg(dotBTKernel, 5, Sizeof.cl_mem, Pointer.to(new cl_mem[] { out.mData }));
+			
+			global[0] = mdim;
+			global[1] = ndim;
+			local[0] = 1;
+			
+			clEnqueueNDRangeKernel(commandQueue, dotBTKernel, 2, null, global, null, 0, null, null);
+		}
 		return out;
 		
 	}
@@ -376,6 +423,7 @@ public class Matrix implements Serializable {
 		
 	}
 	
+	@Deprecated
 	public static Matrix transpose(Matrix a, Matrix out) {
 		
 		assert a.size == out.size;

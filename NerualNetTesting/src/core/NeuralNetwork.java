@@ -122,7 +122,7 @@ public class NeuralNetwork implements Serializable {
 		
 		for (int i = 0; i < w.length; i++) {
 			
-			Matrix.dot(w[i], x[i], x[i + 1]);
+			Matrix.dot(w[i], x[i], x[i + 1], false, false);
 			Matrix.sigmoid(x[i + 1], x[i + 1]);
 			
 		}
@@ -221,21 +221,19 @@ public class NeuralNetwork implements Serializable {
 			} else {
 				
 				Matrix.sigmoidPrime(x[i + 1], x[i + 1]);
-				Matrix.transpose(w[i + 1], w[i + 1]);
+				
 				
 				Matrix temp = new Matrix(w[i + 1].getRows(), delta[i + 1].getColumns());
-				Matrix.dot(w[i + 1], delta[i + 1], temp);
+				Matrix.dot(w[i + 1], delta[i + 1], temp, true, false);
 				Matrix.multiply(temp, x[i + 1], delta[i]);
 				
-				Matrix.transpose(w[i + 1], w[i + 1]);
 				
 				temp.release();
 				
 			}
 			
-			Matrix.transpose(x[i], x[i]);
-			Matrix.dot(delta[i], x[i], djdw[i]);
-			Matrix.transpose(x[i], x[i]);
+
+			Matrix.dot(delta[i], x[i], djdw[i], false, true);
 			
 		}
 		
