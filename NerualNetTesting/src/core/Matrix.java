@@ -24,6 +24,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
@@ -70,9 +72,7 @@ public class Matrix implements Serializable {
 	
 	private int size;
 	
-	private boolean isTransposed;
-	
-	private cl_mem mData;
+	private transient cl_mem mData;
 	
 	static {
 		
@@ -167,7 +167,6 @@ public class Matrix implements Serializable {
 		this.rows = rows;
 		this.columns = columns;
 		this.size = rows * columns;
-		isTransposed = false;
 		
 		Pointer pointer = Pointer.to(data);
 		mData = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * size, pointer, null);
@@ -192,7 +191,6 @@ public class Matrix implements Serializable {
 		this.rows = a.rows;
 		this.columns = a.columns;
 		this.size = rows * columns;
-		this.isTransposed = a.isTransposed;
 		
 		Pointer pointer = Pointer.to(a.mData);
 		mData = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * size, pointer, null);
@@ -201,7 +199,7 @@ public class Matrix implements Serializable {
 	}
 	
 	public void release() {
-				
+		
 		if (mData != null) {
 			
 			clReleaseMemObject(mData);
@@ -253,6 +251,42 @@ public class Matrix implements Serializable {
 		
 	}
 	
+	@Override
+	public String toString() {
+		
+		StringBuilder string = new StringBuilder();
+		float[] data = getData();
+		for (int row = 0; row < rows; row++) {
+			for (int column = 0; column < columns; column++) {
+				string.append(data[row * columns + column] + "\t");
+			}
+			string.append("\n");
+		}
+		
+		return string.toString();
+		
+	}
+	
+	private void writeObject(ObjectOutputStream out) throws IOException {
+		
+		out.writeInt(rows);
+		out.writeInt(columns);
+		float[] data = getData();
+		out.writeObject(data);
+		
+	}
+	
+	private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+		
+		rows = in.readInt();
+		columns = in.readInt();
+		size = rows * columns;
+		float[] data = (float[]) in.readObject();
+		mData = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * size, Pointer.to(data), null);
+		setData(data);
+		
+	}
+	
 	public static Matrix dot(Matrix a, Matrix b, Matrix out, boolean aT, boolean bT) {
 		
 		assert a.columns == b.rows && out.rows == a.rows && out.columns == b.columns;
@@ -300,8 +334,7 @@ public class Matrix implements Serializable {
 			
 			clEnqueueNDRangeKernel(commandQueue, dotATKernel, 2, null, global, null, 0, null, null);
 			
-		}
-		else if (bT){
+		} else if (bT) {
 			mdim = a.getRows();
 			ndim = b.getRows();
 			pdim = a.getColumns();
@@ -423,31 +456,6 @@ public class Matrix implements Serializable {
 		
 	}
 	
-	@Deprecated
-	public static Matrix transpose(Matrix a, Matrix out) {
-		
-		assert a.size == out.size;
-		
-		int rows = a.rows;
-		int columns = a.columns;
-		
-		out.columns = rows;
-		out.rows = columns;
-		
-		float[] oldData = a.getData();
-		float[] newData = new float[oldData.length];
-		
-		for (int row = 0; row < a.rows; row++) {
-			for (int column = 0; column < a.columns; column++) {
-				newData[column * a.rows + row] = oldData[row * a.columns + column];
-			}
-		}
-		
-		out.setData(newData);
-		return out;
-		
-	}
-	
 	public static Matrix add(Matrix a, Matrix b, Matrix out) {
 		
 		assert a.columns == b.columns && a.rows == b.rows && out.columns == a.columns && out.rows == a.rows;
@@ -521,22 +529,6 @@ public class Matrix implements Serializable {
 		clEnqueueNDRangeKernel(commandQueue, sigPrimeKernel, 1, null, global, null, 0, null, null);
 		
 		return out;
-	}
-	
-	@Override
-	public String toString() {
-		
-		StringBuilder string = new StringBuilder();
-		float[] data = getData();
-		for (int row = 0; row < rows; row++) {
-			for (int column = 0; column < columns; column++) {
-				string.append(data[row * columns + column] + "\t");
-			}
-			string.append("\n");
-		}
-		
-		return string.toString();
-		
 	}
 	
 	private static float[] arrayFromSupplier(int size, Supplier<Double> supplier) {
