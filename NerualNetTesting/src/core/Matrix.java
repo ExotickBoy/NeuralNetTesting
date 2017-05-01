@@ -289,13 +289,13 @@ public class Matrix implements Serializable {
 	
 	public static Matrix dot(Matrix a, Matrix b, Matrix out, boolean aT, boolean bT) {
 		
-		assert a.columns == b.rows && out.rows == a.rows && out.columns == b.columns;
-		
 		assert !(aT && bT);
 		
 		int mdim, ndim, pdim;
 		
 		if (!aT && !bT) {
+			
+			assert a.columns == b.rows && out.rows == a.rows && out.columns == b.columns;
 			
 			mdim = a.getRows();
 			ndim = b.getColumns();
@@ -313,9 +313,10 @@ public class Matrix implements Serializable {
 			local[0] = 1;
 			
 			clEnqueueNDRangeKernel(commandQueue, dotKernel, 2, null, global, null, 0, null, null);
-		}
-		
-		if (aT) {
+			
+		} else if (aT) {
+			
+			assert a.rows == b.rows && out.rows == a.columns && out.columns == b.columns;
 			
 			mdim = a.getColumns();
 			ndim = b.getColumns();
@@ -335,6 +336,9 @@ public class Matrix implements Serializable {
 			clEnqueueNDRangeKernel(commandQueue, dotATKernel, 2, null, global, null, 0, null, null);
 			
 		} else if (bT) {
+		
+			assert a.columns == b.columns && out.rows == a.rows && out.columns == b.rows;
+			
 			mdim = a.getRows();
 			ndim = b.getRows();
 			pdim = a.getColumns();
