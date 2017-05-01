@@ -212,28 +212,26 @@ public class NeuralNetwork implements Serializable {
 				delta[i] = new Matrix(x[i + 1].getRows(), x0.getColumns());
 			}
 			
+			Matrix xPrime = new Matrix(x[i + 1].getRows(), x[i + 1].getColumns());
+			Matrix.sigmoidPrime(x[i + 1], xPrime);
+			
 			if (i == w.length - 1) {
 				
 				Matrix.sub(yHat, y, yDif);
-				Matrix.sigmoidPrime(x[i + 1], x[i + 1]);
-				Matrix.multiply(yDif, x[i + 1], delta[i]);
+				Matrix.multiply(yDif, xPrime, delta[i]);
 				
 			} else {
 				
-				Matrix.sigmoidPrime(x[i + 1], x[i + 1]);
-				
-				
-				Matrix temp = new Matrix(w[i + 1].getRows(), delta[i + 1].getColumns());
+				Matrix temp = new Matrix(w[i + 1].getColumns(), delta[i + 1].getColumns());
 				Matrix.dot(w[i + 1], delta[i + 1], temp, true, false);
-				Matrix.multiply(temp, x[i + 1], delta[i]);
-				
-				
+				Matrix.multiply(temp, xPrime, delta[i]);
 				temp.release();
 				
 			}
+			xPrime.release();
 			
-
 			Matrix.dot(delta[i], x[i], djdw[i], false, true);
+			
 			
 		}
 		

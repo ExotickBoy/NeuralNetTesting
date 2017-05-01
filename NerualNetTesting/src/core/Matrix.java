@@ -1,7 +1,7 @@
 package core;
 
 import static org.jocl.CL.CL_CONTEXT_PLATFORM;
-import static org.jocl.CL.CL_DEVICE_TYPE_ALL;
+import static org.jocl.CL.*;
 import static org.jocl.CL.CL_MEM_COPY_HOST_PTR;
 import static org.jocl.CL.CL_MEM_READ_WRITE;
 import static org.jocl.CL.CL_TRUE;
@@ -162,21 +162,22 @@ public class Matrix implements Serializable {
 	
 	public Matrix(int rows, int columns, float[] data) {
 		
+		this(rows, columns);
+		
 		assert data.length == rows * columns;
 		
-		this.rows = rows;
-		this.columns = columns;
-		this.size = rows * columns;
-		
 		Pointer pointer = Pointer.to(data);
-		mData = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * size, pointer, null);
 		clEnqueueWriteBuffer(commandQueue, mData, CL_TRUE, 0, Sizeof.cl_float * size, pointer, 0, null, null);
 		
 	}
 	
 	public Matrix(int rows, int columns) {
 		
-		this(rows, columns, new float[rows * columns]);
+		this.rows = rows;
+		this.columns = columns;
+		this.size = rows * columns;
+		
+		mData = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, Sizeof.cl_float * size, null, null);
 		
 	}
 	
@@ -193,7 +194,7 @@ public class Matrix implements Serializable {
 		this.size = rows * columns;
 		
 		Pointer pointer = Pointer.to(a.mData);
-		mData = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, Sizeof.cl_float * size, pointer, null);
+		mData = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, Sizeof.cl_float * size, pointer, null);
 		clEnqueueWriteBuffer(commandQueue, mData, CL_TRUE, 0, Sizeof.cl_float * size, pointer, 0, null, null);
 		
 	}
@@ -316,7 +317,7 @@ public class Matrix implements Serializable {
 			
 		} else if (aT) {
 			
-			assert a.rows == b.rows && out.rows == a.columns && out.columns == b.columns;
+//			assert a.rows == b.rows && out.rows == a.columns && out.columns == b.columns;
 			
 			mdim = a.getColumns();
 			ndim = b.getColumns();
@@ -336,7 +337,7 @@ public class Matrix implements Serializable {
 			clEnqueueNDRangeKernel(commandQueue, dotATKernel, 2, null, global, null, 0, null, null);
 			
 		} else if (bT) {
-		
+			
 			assert a.columns == b.columns && out.rows == a.rows && out.columns == b.rows;
 			
 			mdim = a.getRows();

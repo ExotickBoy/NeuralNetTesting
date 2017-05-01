@@ -37,7 +37,7 @@ public class Train {
 	private static final int TEST_SAMPLES = 10000;
 	
 	private static final int HIDDEN_LAYER_SIZE = 1000;
-	private static final int HIDDEN_LAYER_AMOUNT = 5;
+	private static final int HIDDEN_LAYER_AMOUNT = 2;
 	
 	private static boolean isStochastic;
 	private static boolean useTesting;
