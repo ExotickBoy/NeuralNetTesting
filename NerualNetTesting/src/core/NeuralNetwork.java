@@ -49,14 +49,11 @@ public class NeuralNetwork implements Serializable {
 		this.hiddenLayerSize = network.hiddenLayerSize;
 		this.numberOfHiddenLayers = network.numberOfHiddenLayers;
 		
-		w = new Matrix[numberOfHiddenLayers + 1];
-		x = new Matrix[numberOfHiddenLayers + 2];
-		djdw = new Matrix[w.length];
-		delta = new Matrix[w.length];
-		
+		initEmptyMatrices();
 		for (int i = 0; i < w.length; i++) {
 			w[i] = new Matrix(network.w[i]);
 		}
+		populateDjdw();
 		
 	}
 	
@@ -85,10 +82,27 @@ public class NeuralNetwork implements Serializable {
 		this.hiddenLayerSize = hiddenLayerSize;
 		this.numberOfHiddenLayers = numberOfHiddenLayers;
 		
-		w = new Matrix[numberOfHiddenLayers + 1];
-		x = new Matrix[numberOfHiddenLayers + 2];
-		djdw = new Matrix[w.length];
-		delta = new Matrix[w.length];
+		initEmptyMatrices();
+		initWeights(r);
+		populateDjdw();
+		
+	}
+	
+	/**
+	 * Creates the djdw matrices to be the same size as w 
+	 */
+	private void populateDjdw() {
+		
+		for (int i = 0; i < w.length; i++) {
+			djdw[i] = new Matrix(w[i].getRows(), w[i].getColumns());
+		}
+		
+	}
+	
+	/**
+	 * Creates the w matrices and fills them with r.nextGaussian(0
+	 */
+	private void initWeights(Random r) {
 		
 		w[0] = new Matrix(hiddenLayerSize, inputLayerSize, r::nextGaussian);
 		for (int i = 1; i < numberOfHiddenLayers; i++) {
@@ -96,9 +110,17 @@ public class NeuralNetwork implements Serializable {
 		}
 		w[numberOfHiddenLayers] = new Matrix(outputLayerSize, hiddenLayerSize, r::nextGaussian);
 		
-		for (int i = 0; i < w.length; i++) {
-			djdw[i] = new Matrix(w[i].getRows(), w[i].getColumns());
-		}
+	}
+	
+	/**
+	 * Creates the lists that contain w, x, djdw, delta
+	 */
+	private void initEmptyMatrices() {
+		
+		w = new Matrix[numberOfHiddenLayers + 1];
+		x = new Matrix[numberOfHiddenLayers + 2];
+		djdw = new Matrix[w.length];
+		delta = new Matrix[w.length];
 		
 	}
 	
@@ -232,7 +254,6 @@ public class NeuralNetwork implements Serializable {
 			
 			Matrix.dot(delta[i], x[i], djdw[i], false, true);
 			
-			
 		}
 		
 		return djdw;
@@ -312,9 +333,11 @@ public class NeuralNetwork implements Serializable {
 		
 		ObjectInputStream ois = new ObjectInputStream(new GZIPInputStream(new FileInputStream(file)));
 		NeuralNetwork network = (NeuralNetwork) ois.readObject();
+		network.initEmptyMatrices();
 		network.w = (Matrix[]) ois.readObject();
+		network.populateDjdw();
 		ois.close();
-		
+				
 		return network;
 		
 	}
